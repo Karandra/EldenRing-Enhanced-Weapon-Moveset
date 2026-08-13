@@ -1,0 +1,17 @@
+# Smithbox files
+.smithbox/*
+
+# Backup and cache files
+*.bin.prev
+*.dcx.bak
+*.dsasbak
+chr/_DSAS_CACHE/*
+
+# Unpacked dcx files
+chr/c0000-behbnd-dcx/*
+chr/c0000_a2x-anibnd-dcx/*
+
+# Other files
+*.lnk
+*.zip
+*.7z
