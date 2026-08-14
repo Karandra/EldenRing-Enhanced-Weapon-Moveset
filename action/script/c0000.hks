@@ -673,6 +673,20 @@ function GuardStanceMoveset(hand)
 				local actionKind = specialAction.ActionKind;
 				local actionMod = specialAction.ActionMod;
 				
+				if (this:IsMagicTranslationAllowed()) then
+					if (actionMod == GuardStanceActionMod.EventAction and actionKind == GuardStanceActionKind.TransformWeaponLeft) then
+						-- In general, any result of ExecMagic is a reason to interrupt any event that called us, since we don't want
+						-- things like being out of stamina to play the usual action. The only way that should happen if the opposite
+						-- hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
+						-- casting action available.
+						
+						local success, reason = this:ExecMagicTranslation();
+						if (not success and (reason == 1 or reason == 2)) then
+							return false;
+						end
+						return true;
+					end
+				end
 				return false;
 			end,
 			
@@ -868,6 +882,318 @@ function GuardStanceMoveset(hand)
 				return ExecAttack2(action.Request, r1, r2, l1, l2, b1, b2, guardAttack, ...) == TRUE;
 			end,
 			
+			-- Executes the magic cast event using a valid spell catalyst in the opposite hand.
+			--
+			-- Parameters:
+				-- int quick_type: one of the QUICKTYPE_* values. Will be requested from hkb if nil.
+				-- int blend_type: ALLBODY, UPPER or LOWER. ALLBODY is used if nil.
+			-- Returns:
+				-- bool: true if sucessful, false otherwise
+				-- int or nil: 1 if not two-handing weapon, 2 if invalid weapon equipped
+			ExecMagicTranslation = function(this, quick_type, blend_type)
+				--this:DebugOutput("[ExecMagicTranslation] quick_type = %s, blend_type = %s", tostring(quick_type), tostring(blend_type));
+				
+				if c_HasActionRequest == FALSE then
+					return false;
+				end
+				if env(GetStamina) <= 0 then
+					return false;
+				end
+				if env(IsMagicUseMenuOpened) == TRUE then
+					return false;
+				end
+				
+				local style = c_Style;
+				local wep_hand = nil;
+				local magic_hand = nil;
+				local magicButton = nil;
+				if (style == HAND_RIGHT_BOTH) then
+					wep_hand = HAND_RIGHT;
+					magic_hand = HAND_LEFT;
+					magicButton = ACTION_ARM_MAGIC_L;
+				elseif (style == HAND_LEFT_BOTH) then
+					-- Doesn't work properly unfortunately
+					--[[
+					wep_hand = HAND_LEFT;
+					magic_hand = HAND_RIGHT;
+					magicButton = ACTION_ARM_MAGIC_R;
+					--]]
+					return false, 1;
+				else
+					return false, 1;
+				end
+				
+				-- Staves and seals for some reasons are all WEAPON_CATEGORY_STAFF
+				local equipType = env(GetEquipWeaponCategory, magic_hand);
+				local movesetOverride = env(GetEquipWeaponSpecialCategoryNumber, magic_hand);
+				
+				-- 240: all seals
+				-- 290: Staff of the Great Beyond
+				if (equipType == WEAPON_CATEGORY_STAFF and (movesetOverride == 240 or movesetOverride == 290)) then
+					if (env(IsMagicUseMenuOpening, magic_hand) == TRUE) then
+						ResetRequest();
+						act(OpenMenuWhenUsingMagic, magicButton);
+						return true;
+					end
+					
+					local function UpdateMagicIndexFully()
+						-- Requires Scripts-Data-Exposer-FS
+						-- Updates the player's magic module's id to the equipped magic slot, allowing the proper usage of magic with irregular methods.
+						local UpdateMagicIdToActive = 10002;
+
+						act(UpdateMagicIdToActive);
+						act(DecideMagicUse); --UpdateMagicIndexToMagicId
+					end
+					local function IsSorcery(magic_index)
+						return this:AnyOf(
+						{
+							1, -- Glintstone Pebble, Great Glintstone Shard, Glintstone Icecrag
+							2, -- Glintstone Cometshard, Comet, Shard Spiral, Night Comet
+							79, -- Swift Glintstone Shard
+							107, -- Glintstone Stars, Star Shower, Stars of Ruin, Magic Downpour, Glintstone Nail, Glintstone Nails
+							16, -- Glintstone Arc
+							4, -- Crystal Barrage
+							113, -- Crystal Burst, Shattering Crystal, Night Maiden's Mist, Freezing Mist, Fia's Mist
+							92, -- Cannon of Haima
+							78, -- Gavel of Haima
+							56, -- Shatter Earth
+							57, -- Rock Blaster
+							11, -- Scholar Armament, Frozen Armament, Unseen Blade
+							12, -- Scholar Shield
+							13, -- Starlight, Terra Magica, Lucidity
+							110, -- Thops's Barrier
+							7, -- Comet Azur, Crystal Torrent
+							124, -- Founding Rain of Stars
+							118, -- Magic Glintblade
+							138, -- Glintblade Trio
+							8, -- Glintblade Phalanx, Carian Phalanx, Eternal Darkness
+							95, -- Greatblade Phalanx, Rykard's Rancor
+							5, -- Loretta's Greatbow, Loretta's Mastery
+							6, -- Rennala's Full Moon, Ranni's Dark Moon
+							161, -- Rellana's Twin Moons
+							80, -- Carian Slicer
+							9, -- Carian Greatsword, Adula's Moonblade
+							10, -- Carian Piercer
+							84, -- Carian Retaliation
+							127, -- Miriam's Vanishing
+							83, -- Ambush Shard
+							79, -- Night Shard
+							109, -- Unseen Form
+							117, -- Magma Shot, Rolling Magma
+							102, -- Gelmir's Fury
+							14, -- Zamor Ice Storm
+							58, -- Crystal Release
+							120, -- Gravity Well, Collapsing Stars, Gravitational Missile, Blades of Stone, Fleeting Microcosm
+							108, -- Rock Sling
+							15, -- Meteorite, Meteorite of Astel
+							157, -- Cherishing Fingers
+							75, -- Oracle Bubbles
+							76, -- Great Oracular Bubble
+							81, -- Briars of Sin
+							82, -- Briars of Punishment
+							150, -- Mantle of Thorns
+							156, -- Impenetrable Thorns
+							103, -- Rancorcall, Ancient Death Rancor
+							143, -- Rings of Spectral Light
+							115, -- Explosive Ghostflame
+							121, -- Tibia's Summons
+							158, -- Mass of Putrescence
+							126, -- Vortex of Putrescence
+						}, magic_index);
+					end
+					local function ShouldUseRightHand(magic_index)
+						if (magic_hand == HAND_LEFT) then
+							return this:AnyOf(
+							{
+								-- Sorcery
+								-- Most need to use right hand to look right, but that causes several issues:
+								-- * First, if tight hand is set, the spell is going to have no scaling which is totally something we don't want.
+								-- * Second, chargeable spells lose their charge option, not sure why.
+								-- * Third, most cast visuals are going to be missing if they're supposed to spawn on the staff.
+								-- With the issues above unsolved, we can only allow right hand for spells that don't scale and have
+								-- correct visuals when in right hand. All That leaves us only a few utility spells. Maybe it's better to disable
+								-- sorcery at all.
+								
+								--1, -- Glintstone Pebble, Great Glintstone Shard, Glintstone Icecrag
+								--2, -- Glintstone Cometshard, Comet, Shard Spiral, Night Comet
+								--79, -- Swift Glintstone Shard
+								--107, -- Glintstone Stars, Star Shower, Stars of Ruin, Magic Downpour, Glintstone Nail, Glintstone Nails
+								--16, -- Glintstone Arc
+								--4, -- Crystal Barrage
+								--113, -- Crystal Burst, Shattering Crystal, Night Maiden's Mist, Freezing Mist, Fia's Mist
+								--92, -- Cannon of Haima
+								--78, -- Gavel of Haima
+								--56, -- Shatter Earth (two-handed animation, sword is inverted)
+								--57, -- Rock Blaster (two-handed animation, sword is inverted)
+								--11, -- Scholar Armament, Frozen Armament, Unseen Blade (no right hand animation)
+								--12, -- Scholar Shield (not applicable)
+								13, -- Starlight, Terra Magica, Lucidity
+								110, -- Thops's Barrier (some visuals are lost, but not extremely)
+								--7, -- Comet Azur, Crystal Torrent (lloks somewhat okay with left hand)
+								--124, -- Founding Rain of Stars
+								--118, -- Magic Glintblade
+								--138, -- Glintblade Trio
+								--8, -- Glintblade Phalanx, Carian Phalanx, Eternal Darkness
+								--95, -- Greatblade Phalanx, Rykard's Rancor
+								--5, -- Loretta's Greatbow, Loretta's Mastery (looks okay with left hand)
+								--6, -- Rennala's Full Moon, Ranni's Dark Moon (looks just fine in left hand)
+								--161, -- Rellana's Twin Moons (looks okay in left hand, sword is inverted anyway)
+								--80, -- Carian Slicer
+								--9, -- Carian Greatsword, Adula's Moonblade
+								--10, -- Carian Piercer
+								--84, -- Carian Retaliation
+								127, -- Miriam's Vanishing
+								--83, -- Ambush Shard
+								--79, -- Night Shard
+								109, -- Unseen Form
+								--117, -- Magma Shot, Rolling Magma
+								--102, -- Gelmir's Fury
+								--14, -- Zamor Ice Storm (fine with left hand)
+								--58, -- Crystal Release (fine with left hand)
+								--120, -- Gravity Well, Collapsing Stars, Gravitational Missile, Blades of Stone, Fleeting Microcosm (fine with left hand)
+								--108, -- Rock Sling
+								--15, -- Meteorite, Meteorite of Astel
+								--157, -- Cherishing Fingers
+								--75, -- Oracle Bubbles
+								--76, -- Great Oracular Bubble
+								--81, -- Briars of Sin
+								--82, -- Briars of Punishment
+								--150, -- Mantle of Thorns
+								--156, -- Impenetrable Thorns
+								--103, -- Rancorcall, Ancient Death Rancor
+								--143, -- Rings of Spectral Light
+								--115, -- Explosive Ghostflame (fine with left hand)
+								--121, -- Tibia's Summons
+								--158, -- Mass of Putrescence
+								--126, -- Vortex of Putrescence
+								
+								-- Incantations
+								-- None of them require it, though some can use weapon sheating during the animation.
+								-- Need to figure out how to do that, but it's a pretty minor issue.
+							}, magic_index);
+						end
+						return false;
+					end
+					
+					act(DecideMagicUse)
+					act(NotifyAIMagicCast)
+					UpdateMagicIndexFully();
+					
+					local magic_index = env(GetMagicAnimType)
+					g_MagicIndex = magic_index
+					g_Magichand = magic_hand
+					local lastMagicMem = lastUsedMagicAnim
+					lastUsedMagicAnim = magic_index
+					--this:DebugOutput("[ExecMagicTranslation] magic_index = %s, lastMagicMem = %s", magic_index, lastMagicMem);
+					
+					if (movesetOverride == 290 and IsSorcery(magic_index)) then
+						return false, 2;
+					end
+					
+					if (not blend_type or c_IsStealth == TRUE) then
+						blend_type = ALLBODY
+					end
+					if (not quick_type) then
+						local moveSpeed = GetVariable("MoveSpeedIndex");
+						if moveSpeed == 2 then
+							quick_type = QUICKTYPE_DASH;
+						elseif moveSpeed == 1 then
+							quick_type = QUICKTYPE_RUN;
+						else
+							quick_type = QUICKTYPE_NORMAL;
+						end
+					end
+					
+					if blend_type == ALLBODY and MoveStart(LOWER, Event_Move, FALSE) == TRUE then
+						local move_event = Event_Move
+						if IsStealthMagic(magic_index) == TRUE and c_IsStealth == TRUE then
+							move_event = Event_Stealth_Move
+						end
+						if MoveStart(LOWER, move_event, FALSE) == TRUE then
+							blend_type = UPPER
+						end
+					end
+					
+					if env(IsMagicUseable, magic_hand, 0) == FALSE then
+						act(DebugLogOutput, "Event_MagicInvalid_Cannot_Use_Magic")
+						SetVariable("IndexMagicHand", magic_hand)
+						ExecEventHalfBlend(Event_MagicInvalid, blend_type)
+						
+						act(SetIsMagicInUse, TRUE)
+						act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID))
+						SetAIActionState()
+						
+						return true;
+					end
+
+					if magic_index == 254 or magic_index == 255 then
+						SetVariable("IndexMagicHand", magic_hand)
+						act(DebugLogOutput, "Event_MagicInvalid_InvalidMagic")
+						ExecEventHalfBlend(Event_MagicInvalid, blend_type)
+						
+						act(SetIsMagicInUse, TRUE)
+						act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID))
+						SetAIActionState()
+						
+						return true;
+					end
+					
+					SetVariable("MagicRight_ShieldCategory", 0);
+					if magic_index == MAGIC_REQUEST_GRAVITY or magic_index == MAGIC_REQUEST_METEOR or magic_index
+						== MAGIC_REQUEST_BLASTING or magic_index == MAGIC_REQUEST_DRILL or magic_index == MAGIC_REQUEST_MAGIC_SPARK
+						or magic_index == 115 or magic_index == 120 or magic_index == 121 or magic_index == 157 or magic_index == 82
+						or magic_index == 150 or magic_index == 156 or magic_index == 161 then
+						SetVariable("Magic_SpecialStaffCategory", 0)
+					elseif magic_index == 141 or magic_index == 128 or magic_index == 146 then
+						if env(GetEquipWeaponSpecialCategoryNumber, magic_hand) == 290 then -- Staff of the Great Beyond
+							SetVariable("Magic_SpecialStaffCategory", 1)
+						else
+							SetVariable("Magic_SpecialStaffCategory", 0)
+						end
+					else
+						SetVariable("Magic_SpecialStaffCategory", 0)
+					end
+					
+					local is_atk_auto_aim = FALSE;
+					if magic_index == MAGIC_REQUEST_WHIP or magic_index == MAGIC_REQUEST_SLASH or magic_index == MAGIC_REQUEST_QUICKSLASH
+						or magic_index == MAGIC_REQUEST_FLAME_GRAB or magic_index == MAGIC_REQUEST_CRUSH or magic_index
+						== MAGIC_REQUEST_CHOP or magic_index == MAGIC_REQUEST_SCYTHE then
+						is_atk_auto_aim = TRUE;
+					end
+
+					if magic_index == 127 and env(GetSpEffectID, 19975) == TRUE then
+						return true;
+					end
+					
+					local useRightHand = ShouldUseRightHand(magic_index);
+					if (useRightHand) then
+						magic_hand = HAND_RIGHT;
+					end
+					
+					if ExecComboMagic(magic_hand, blend_type, lastMagicMem, magic_index) == TRUE then
+						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecComboMagic", magic_index);
+					elseif ExecQuickMagic(magic_hand, quick_type, blend_type) == TRUE then
+						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecQuickMagic", magic_index);
+					elseif ExecStealthMagic(magic_hand, magic_index, blend_type) == TRUE then
+						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecStealthMagic", magic_index);
+					elseif (useRightHand) then
+						ExecEventHalfBlend(Event_MagicLaunchRight, blend_type)
+						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecEventHalfBlend(Event_MagicLaunchRight)", magic_index);
+					else
+						ExecEventHalfBlend(Event_MagicLaunchLeft, blend_type)
+						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecEventHalfBlend(Event_MagicLaunchLeft)", magic_index);
+					end
+					
+					act(SetIsMagicInUse, TRUE)
+					act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID))
+					SetAIActionState();
+					return true;
+				else
+					return false, 2;
+				end
+				return false;
+			end,
+			
 			-- Controls the access to env(IsSpecialTransitionPossible) inside ExecAttack
 			--
 			-- Returns: bool
@@ -891,8 +1217,7 @@ function GuardStanceMoveset(hand)
 							GuardStanceActionKind.Jump,
 							GuardStanceActionKind.Stealth,
 							GuardStanceActionKind.UseItem,
-							GuardStanceActionKind.EventAction,
-							GuardStanceActionKind.SwitchWeaponRight
+							GuardStanceActionKind.EventAction
 						}, actionKind);
 					elseif (actionContext == GuardStanceActionContext.OnGuardEnd) then
 						return this:AnyOf(
@@ -902,13 +1227,21 @@ function GuardStanceMoveset(hand)
 							GuardStanceActionKind.SwitchWeaponRight
 						}, actionKind);
 					elseif (actionContext == GuardStanceActionContext.Global) then
-						return this:AnyOf(
-						{
-							GuardStanceActionKind.TransformWeaponLeft
-						}, actionKind);
+						if (this:IsMagicTranslationAllowed()) then
+							return this:AnyOf(
+							{
+								GuardStanceActionKind.TransformWeaponLeft
+							}, actionKind);
+						end
 					end
 				end
 				return false;
+			end,
+			
+			-- Returns true if the weapon is allowed to cast spells from the opposite hand catalyst
+			-- Returns: bool
+			IsMagicTranslationAllowed = function(this)
+				return this:IsAvailable() and this:IsTwoHanding();
 			end,
 			
 			-- Translate the action kind to its corresponding input command
@@ -2527,6 +2860,13 @@ function IsQuickMagic()
         MAGIC_REQUEST_QUICKSLASH,
         MAGIC_REQUEST_QUICK_FLAME
     }
+	
+	local guardStanceMoveset = GuardStanceMoveset();
+	if (guardStanceMoveset:IsMagicTranslationAllowed()) then
+		if (magic_type == MAGIC_REQUEST_WEAPON_ENCHANT2 or Contains(magic_type_list, magic_type) == TRUE) then
+			return TRUE;
+		end
+	end
 
     if (magic_type == MAGIC_REQUEST_WEAPON_ENCHANT2 and c_Style == HAND_RIGHT) or Contains(magic_type_list, magic_type) == TRUE then
         return TRUE
