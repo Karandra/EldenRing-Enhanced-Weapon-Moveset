@@ -227,7 +227,33 @@ function GuardStanceMoveset(hand)
 				local style = c_Style
 				return style == HAND_RIGHT_BOTH or style == HAND_LEFT_BOTH;
 			end,
-		
+			
+			-- Checks if the provided value is in the array
+			--
+			-- Returns: bool
+			AnyOf = function(this, array, value)
+				for i, v in ipairs(array) do
+					if (v == value) then
+						return true;
+					end
+				end
+				return false;
+			end,
+			
+			-- Queries the table by key if the table is not nil
+			--
+			-- Parameters:
+				-- table
+				-- any
+			-- Returns: any, nil if no such key present
+			QueryTable = function(this, t, key)
+				if (type(t) == "table") then
+					return t[key];
+				else
+					return nil;
+				end
+			end,
+			
 		-- private:
 			DebugOutput = function(this, fmt, ...)
 				-- No __close or __gc metamethod in this Lua version, it'll get closed when
