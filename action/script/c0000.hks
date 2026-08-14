@@ -8701,7 +8701,7 @@ function GuardCommonFunction(is_guard_end, blend_type, is_just_guard)
 
 	local guardStanceMoveset = GuardStanceMoveset();
 	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable(GuardStanceActionContext.OnGuard);
-	if (is_guard_end == TRUE) then
+	if (specialAction and is_guard_end == TRUE) then
 		specialAction:SetContext(GuardStanceActionContext.OnGuardEnd);
 	end
 
