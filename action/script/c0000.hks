@@ -230,19 +230,62 @@ function GuardStanceMoveset(hand)
 		
 		-- private:
 			DebugOutput = function(this, fmt, ...)
-				local this = g_GuardStanceMoveset;
-				
-				if (not this.LogFile) then
-					this.LogFile = io.open("c0000.hks.log", "a+b");
-				end
-				
-				if (this.LogFile) then
-					this.LogFile:write(string.format(fmt, ...) .. "\n");
-					this.LogFile:flush();
-				end
-				
 				-- No __close or __gc metamethod in this Lua version, it'll get closed when
 				-- the game process terminates.
+			
+				local logFileName = "c0000.hks.log";
+				local logFileMode = "a+b";
+				
+				local success, err = pcall(function(...)
+					local this = g_GuardStanceMoveset;
+					
+					if (not this.LogFile) then
+						-- No __close or __gc metamethod in this Lua version, it'll get closed when
+						-- the game process terminates.
+						
+						local file = io.open(logFileName, logFileMode);
+						if (file) then
+							local version = _VERSION;
+							if (version == "$release r$build") then
+								-- No valid _VERSION present, assuming Lua 5.1 (tested)
+								version = "Lua 5.1";
+							end
+							
+							file:write(string.format("[Logger] c0000.hks.log opened, Running HavokScript %s\n", version));
+							file:flush();
+							
+							this.LogFile = file;
+						else
+							error("Failed to open log file: \'" .. logFileName .. "\'");
+							return;
+						end
+					end
+					
+					local file = this.LogFile;
+					if (file) then
+						-- Convert parameters so any non-string value can be printed
+						local args = {select(1, ...)};
+						for i = 1, #args do
+							local v = args[i];
+							if (type(v) ~= "string") then
+								args[i] = tostring(v);
+							end
+						end
+					
+						file:write(string.format(fmt, unpack(args)) .. "\n");
+						file:flush();
+					end
+				end, ...);
+				
+				-- If we somehow got an error during logging (usually something string.format related),
+				-- log it with raw io calls.
+				if (not success) then
+					local file = io.open(logFileName, logFileMode);
+					if (file) then
+						file:write(string.format("[Logger] Exception Caught: %s\n", tostring(err)));
+						file:close();
+					end
+				end
 			end,
 		
 			-- Handles the update routine, called from the main update loop
