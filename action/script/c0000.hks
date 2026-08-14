@@ -5262,7 +5262,10 @@ function ExecItem(quick_type, blend_type, specialAction)
 	else
 		local guardStanceMoveset = GuardStanceMoveset();
 		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.UseItem, nil, specialAction)) then
-			return FALSE;
+			if (specialAction) then
+				return FALSE;
+			end
+			return TRUE;
 		end
     end
     if env(IsItemUseMenuOpened) == TRUE then
@@ -5658,7 +5661,10 @@ function ExecWeaponChange(blend_type, specialAction)
 	
 	local guardStanceMoveset = GuardStanceMoveset();
 	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.EventAction, GuardStanceActionMod.EventAction, specialAction)) then
-		return FALSE;
+		if (specialAction) then
+			return FALSE;
+		end
+		return TRUE;
 	end
 	
     if env(ActionRequest, ACTION_ARM_R1) == TRUE or env(ActionRequest, ACTION_ARM_R2) == TRUE then
@@ -5669,7 +5675,10 @@ function ExecWeaponChange(blend_type, specialAction)
             HandChangeTest_ToL2 = FALSE
 			
 			if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.TransformWeaponRight, GuardStanceActionMod.EventAction, specialAction)) then
-				return FALSE;
+				if (specialAction) then
+					return FALSE;
+				end
+				return TRUE;
 			end
 
             if env(ActionRequest, ACTION_ARM_R1) == TRUE then
@@ -5688,7 +5697,10 @@ function ExecWeaponChange(blend_type, specialAction)
         HandChangeTest_ToL2 = FALSE
 		
 		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.TransformWeaponLeft, GuardStanceActionMod.EventAction, specialAction)) then
-			return FALSE;
+			if (specialAction) then
+				return FALSE;
+			end
+			return TRUE;
 		end
 
         if env(ActionRequest, ACTION_ARM_L1) == TRUE then
@@ -5702,13 +5714,19 @@ function ExecWeaponChange(blend_type, specialAction)
 	
     if env(ActionRequest, ACTION_ARM_CHANGE_WEAPON_R) == TRUE then
 		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.SwitchWeaponRight, nil, specialAction)) then
-			return FALSE;
+			if (specialAction) then
+				return FALSE;
+			end
+			return TRUE;
 		end
 		
         kind = GetWeaponChangeType(HAND_RIGHT)
     elseif env(ActionRequest, ACTION_ARM_CHANGE_WEAPON_L) == TRUE then
 		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.SwitchWeaponLeft, nil, specialAction)) then
-			return FALSE;
+			if (specialAction) then
+				return FALSE;
+			end
+			return TRUE;
 		end
 		
         kind = GetWeaponChangeType(HAND_LEFT)
@@ -5767,7 +5785,10 @@ end
 function ExecJump(specialAction)
 	local guardStanceMoveset = GuardStanceMoveset();
 	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.Jump, nil, specialAction)) then
-		return FALSE;
+		if (specialAction) then
+			return FALSE;
+		end
+		return TRUE;
 	end
 
     -- Note: Restored original value during full remake. Repo values was ACTION_ARM_JUMP instead of ACTION_ARM_CHANGE_STYLE
@@ -6138,7 +6159,10 @@ function ExecEvasion(backstep_limit, estep, is_usechainrecover, specialAction)
 	
 	local guardStanceMoveset = GuardStanceMoveset();
 	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.Stealth, GuardStanceActionMod.Stealth, specialAction)) then
-		return FALSE;
+		if (specialAction) then
+			return FALSE;
+		end
+		return TRUE;
 	end
 
     local request = GetEvasionRequest()
