@@ -287,7 +287,30 @@ function GuardStanceMoveset(hand)
 					end
 				end
 			end,
-		
+			
+			TryCatch = function(this, tryFunc, catchFunc)
+				if (catchFunc) then
+					local success, err = xpcall(tryFunc, catchFunc);
+					
+					if (success) then
+						return true;
+					else
+						this:DebugOutput("[TryCatch] Exception Caught: %s", err);
+					end
+				elseif (tryFunc) then
+					local success, err = pcall(tryFunc);
+					
+					if (success) then
+						return true;
+					else
+						this:DebugOutput("[TryCatch] Exception Caught: %s", err);
+					end
+				else
+					this:DebugOutput("[TryCatch] Missing Try function");
+				end
+				return false;
+			end,
+			
 			-- Handles the update routine, called from the main update loop
 			--
 			-- Returns: void
