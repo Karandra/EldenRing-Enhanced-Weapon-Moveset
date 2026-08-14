@@ -87,40 +87,55 @@ end
 local GuardStanceActionKind =
 {
 	None = 0,
-	
+
 	-- Unique
 	-- Disables the standard action if set 
-	TransformWeapon = 1,
-	SwitchWeaponLeft = 2,
-	SwitchWeaponRight = 3,
-	SwitchSpell = 4, -- Not possibe, at least not without hkb changes
-	SwitchItem = 5, -- Same as SwitchSpell
-	UseItem = 6,
-	Jump = 7,
+	TransformWeaponLeft = 1,
+	TransformWeaponRight = 2,
+	SwitchWeaponLeft = 3,
+	SwitchWeaponRight = 4,
+	SwitchSpell = 5, -- Not possibe, at least not without hkb changes
+	SwitchItem = 6, -- Same as SwitchSpell
+	UseItem = 7,
+	Jump = 8,
 	
 	-- Shared
 	-- These can be assigned as their own action as opposed to a modifier
 	-- and doing so disables its corresponding modifier since the action
 	-- will be invoked immediately.
 	-- Disables the standard action if set 
-	EventAction = 8,
-	WeaponArt = 9, -- Complicated to implement, maybe later
-	Stealth = 10,
-	LockOn = 11, -- Works, but doesn't disable the lockon function
+	EventAction = 9,
+	WeaponArt = 10, -- Complicated to implement, maybe later
+	Stealth = 11,
+	LockOn = 12, -- Works, but doesn't disable the lockon function
 	
-	MAX = 12
+	MAX = 13
 };
 
 local GuardStanceActionMod =
 {
+	None = 1000,
+	
+	EventAction = 1001,
+	WeaponArt = 1002, -- See note in GuardStanceActionKind
+	Stealth = 1003,
+	LockOn = 1004, -- See note in GuardStanceActionKind
+	
+	MAX = 1005
+};
+
+local GuardStanceActionContext =
+{
 	None = 0,
 	
-	EventAction = 1,
-	WeaponArt = 2, -- See note in GuardStanceActionKind
-	Stealth = 3,
-	LockOn = 4, -- See note in GuardStanceActionKind
+	-- Any context that isn't already handled by the below options
+	Global = -1,
 	
-	MAX = 5
+	-- When guard is actively held
+	OnGuard = 100,
+	
+	-- When guard is dropping
+	OnGuardEnd = 101
 };
 
 local GuardStanceOnUpdate =
@@ -194,9 +209,9 @@ local GuardStanceOnUpdate =
 	HeavyChargeEnd = -1002,
 };
 
--- GuardStanceMoveset class
 local g_GuardStanceMoveset = nil;
 
+-- GuardStanceMoveset class
 -- Parameters:
 	-- int hand: the hand to initialize the weapon for, if nil the active hand is used
 function GuardStanceMoveset(hand)
@@ -357,6 +372,14 @@ function GuardStanceMoveset(hand)
 				if (env(HasThrowRequest) and env(GetSpEffectID, 103110) == TRUE) then
 					SetThrowAtkInvalid();
 				end
+				
+				-- Reset the global modifier if it's invalid
+				if (g_GuardStanceMoveset.SpecialAction.ActionMod) then
+					local command = this:TranslateActionCommand(g_GuardStanceMoveset.SpecialAction.ActionMod);
+					if (command and (env(ActionCancelRequest, command) == TRUE or env(ActionDuration, command) <= 0)) then
+						g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+					end
+				end
 			end,
 			
 			-- Handles the guard timeout, called from 'ExecGuard' function
@@ -393,6 +416,8 @@ function GuardStanceMoveset(hand)
 			--
 			-- Returns: bool, true if ExecAttack is allowed to continue, false otherwise
 			OnExecAttack = function(this, request, action)
+				g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+				
 				if (this:IsAvailable()) then
 					-- Handle alternate charge attack inputs, like when a heavy attack gets
 					-- passed though light attack chain. Simulated requests also require it.
@@ -434,7 +459,7 @@ function GuardStanceMoveset(hand)
 				this.ChainAttackTimer = GetDeltaTime();
 			end,
 			AttackChain_SelectNext = function(this, ref)
-				--this:DebugOutput("[AttackChain_SelectNext] ChainAttackAllowed: %s, ChainAttackIndex = %s, ChainAttackTimer = %s", tostring(this.ChainAttackAllowed), tostring(this.ChainAttackIndex), tostring(this.ChainAttackTimer));
+				--this:DebugOutput("[AttackChain_SelectNext] ChainAttackAllowed: %s, ChainAttackIndex = %s, ChainAttackTimer = %s", this.ChainAttackAllowed, this.ChainAttackIndex, this.ChainAttackTimer);
 				
 				if (this.ChainAttackTimer and this.ChainAttackTimer >= 1.0) then
 					this:ResetActionOnEvasion();
@@ -461,7 +486,17 @@ function GuardStanceMoveset(hand)
 				end
 				return nil;
 			end,
-			
+		
+		-- public:
+			GuardStanceMoveset = function(this, hand)
+				local movesetOverride = nil;
+				if (not hand or hand ~= -1) then
+					this.MovesetOverride = GetMovesetOverride(hand);
+				elseif (hand == -1) then
+					this.SpecialAction = GuardStanceMoveset_SpecialAction(GuardStanceActionContext.Global);
+				end
+			end,
+		
 		-- public:
 			-- Reloads the active weapon
 			--
@@ -624,6 +659,23 @@ function GuardStanceMoveset(hand)
 				return action;
 			end,
 			
+			-- Translate the special action from global state. The translation isn't done into action data,
+			-- the function will have to execute the attack itself.
+			-- Called from various 'Exec*' and '*CommonFunction' functions.
+			--
+			-- Parameters:
+				-- const class SpecialAction& 
+			-- Returns: struct Action
+			TranslateActionOnGlobal = function(this, specialAction)
+				--this:DebugOutput("[TranslateActionOnGlobal] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
+				
+				-- We always have special action here
+				local actionKind = specialAction.ActionKind;
+				local actionMod = specialAction.ActionMod;
+				
+				return false;
+			end,
+			
 			-- Translate the special action from guard stance into attack action data.
 			-- Called from 'GuardCommonFunction' and 'DamageCommonFunction' functions.
 			--
@@ -631,6 +683,8 @@ function GuardStanceMoveset(hand)
 				-- const class SpecialAction& 
 			-- Returns: struct Action
 			TranslateActionOnGuard = function(this, specialAction)
+				--this:DebugOutput("[TranslateActionOnGuard] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
+				
 				local attackRequest = nil;
 				local b1 = "W_AttackBothLight2";
 				local b2 = "W_AttackBothHeavy1aStart";
@@ -694,7 +748,7 @@ function GuardStanceMoveset(hand)
 				-- struct Action&
 			-- Returns: struct Action&
 			TranslateActionOnEvasion = function(this, action)
-				--this:DebugOutput("[TranslateActionOnEvasion] Action: %s, Action.R1 = %s, Action.B1 = %s", tostring(action), tostring(action.R1), tostring(action.B1));
+				--this:DebugOutput("[TranslateActionOnEvasion] Action: %s, Action.R1 = %s, Action.B1 = %s", action, action.R1, action.B1);
 				
 				local nextIndex = g_GuardStanceMoveset:AttackChain_SelectNext(this);
 				if (nextIndex) then
@@ -821,29 +875,38 @@ function GuardStanceMoveset(hand)
 				return not this:IsAvailable();
 			end,
 			
-			-- Tests if the specific action kind is supported by the given weapon 
+			-- Tests if the action can be invoked in the given context
 			--
 			-- Parameters:
 				-- enum GuardStanceActionKind
+				-- enum GuardStanceActionContext
 			-- Returns: bool
-			IsActionSupported = function(this, actionKind)
-				if (actionKind > GuardStanceActionKind.None and actionKind < GuardStanceActionKind.MAX) then
-					local function AnyOf(array, value)
-						for i, v in ipairs(array) do
-							if v == value then
-								return true;
-							end
-						end
-						return false;
+			CanInvokeAction = function(this, actionKind, actionContext)
+				--this:DebugOutput("[CanInvokeAction] actionKind: %s, actionContext = %s", actionKind, actionContext);
+				
+				if (actionKind and actionKind > GuardStanceActionKind.None and actionKind < GuardStanceActionKind.MAX) then
+					if (actionContext == GuardStanceActionContext.OnGuard) then
+						return this:AnyOf(
+						{
+							GuardStanceActionKind.Jump,
+							GuardStanceActionKind.Stealth,
+							GuardStanceActionKind.UseItem,
+							GuardStanceActionKind.EventAction,
+							GuardStanceActionKind.SwitchWeaponRight
+						}, actionKind);
+					elseif (actionContext == GuardStanceActionContext.OnGuardEnd) then
+						return this:AnyOf(
+						{
+							GuardStanceActionKind.UseItem,
+							GuardStanceActionKind.EventAction,
+							GuardStanceActionKind.SwitchWeaponRight
+						}, actionKind);
+					elseif (actionContext == GuardStanceActionContext.Global) then
+						return this:AnyOf(
+						{
+							GuardStanceActionKind.TransformWeaponLeft
+						}, actionKind);
 					end
-					
-					return AnyOf(
-					{
-						GuardStanceActionKind.Jump,
-						GuardStanceActionKind.Stealth,
-						GuardStanceActionKind.UseItem,
-						GuardStanceActionKind.EventAction
-					}, actionKind);
 				end
 				return false;
 			end,
@@ -852,20 +915,48 @@ function GuardStanceMoveset(hand)
 			--
 			-- Parameters:
 				-- enum GuardStanceActionKind
-			-- Returns: int ACTION_ARM_*, nil if unknown
+			-- Returns: int: one of ACTION_ARM_* values, nil if no translation exists for the given action kind
 			TranslateActionCommand = function(this, actionKind)
-				if (actionKind == GuardStanceActionKind.UseItem) then
-					return ACTION_ARM_USE_ITEM;
-				elseif (actionKind == GuardStanceActionKind.Jump) then
-					return ACTION_ARM_CHANGE_STYLE;
-				elseif (actionKind == GuardStanceActionKind.EventAction) then
-					return ACTION_ARM_ACTION;
-				elseif (actionKind == GuardStanceActionKind.WeaponArt) then
-					return ACTION_ARM_L2;
-				elseif (actionKind == GuardStanceActionKind.Stealth) then
-					return ACTION_ARM_L3;
-				elseif (actionKind == GuardStanceActionKind.LockOn) then
-					return ACTION_ARM_R3;
+				-- TransformWeapon variants aren't a singular action so they don't have such translation
+				
+				if (actionKind and actionKind > GuardStanceActionKind.None and actionKind < GuardStanceActionKind.MAX) then
+					if (actionKind == GuardStanceActionKind.UseItem) then
+						return ACTION_ARM_USE_ITEM;
+					elseif (actionKind == GuardStanceActionKind.Jump) then
+						return ACTION_ARM_CHANGE_STYLE;
+					elseif (actionKind == GuardStanceActionKind.EventAction) then
+						return ACTION_ARM_ACTION;
+					elseif (actionKind == GuardStanceActionKind.WeaponArt) then
+						return ACTION_ARM_L2;
+					elseif (actionKind == GuardStanceActionKind.Stealth) then
+						return ACTION_ARM_L3;
+					elseif (actionKind == GuardStanceActionKind.LockOn) then
+						return ACTION_ARM_R3;
+					elseif (actionKind == GuardStanceActionKind.SwitchWeaponLeft) then
+						return ACTION_ARM_CHANGE_WEAPON_L;
+					elseif (actionKind == GuardStanceActionKind.SwitchWeaponRight) then
+						return ACTION_ARM_CHANGE_WEAPON_R;
+					end
+				end
+				return nil;
+			end,
+			
+			-- Translate a compatible action modifier to its corresponding input command
+			--
+			-- Parameters:
+				-- enum enum GuardStanceActionMod
+			-- Returns: int: one of ACTION_ARM_* values, nil if no translation exists for the given action mod
+			TranslateActionModifier = function(this, actionMod)
+				if (actionMod and actionMod > GuardStanceActionMod.None and actionMod < GuardStanceActionMod.MAX) then
+					if (actionMod == GuardStanceActionMod.EventAction) then
+						return ACTION_ARM_ACTION;
+					elseif (actionMod == GuardStanceActionMod.WeaponArt) then
+						return ACTION_ARM_L2;
+					elseif (actionMod == GuardStanceActionMod.Stealth) then
+						return ACTION_ARM_L3;
+					elseif (actionMod == GuardStanceActionMod.LockOn) then
+						return ACTION_ARM_R3;
+					end
 				end
 				return nil;
 			end,
@@ -895,24 +986,166 @@ function GuardStanceMoveset(hand)
 				end
 			end,
 			
-			-- A shortcut to create GuardStanceMoveset_SpecialAction only if we have a valid
-			-- GuardStanceMoveset weapon equipped.
+			-- A shortcut to create GuardStanceMoveset_SpecialAction only if we have a valid weapon equipped.
 			--
+			-- Parameters:
+				-- enum GuardStanceActionContext
 			-- Returns: GuardStanceMoveset_SpecialAction
-			CreateSpecialActionIfAvailable = function(this)
+			CreateSpecialActionIfAvailable = function(this, actionContext)
 				if (this:IsAvailable()) then
-					return GuardStanceMoveset_SpecialAction(this);
+					return GuardStanceMoveset_SpecialAction(actionContext);
 				end
 				return nil;
+			end,
+			
+			-- TODO
+			--
+			-- Parameters:
+				-- enum GuardStanceActionKind
+				-- enum GuardStanceActionMod
+				-- enum GuardStanceActionContext
+			-- Returns: bool, true if the if we're going to process this event outselves thus preventing it from activating
+			HandleSpecialActionOnEvent = function(this, actionKind, actionMod, specialAction, condition)
+				--this:DebugOutput("[HandleSpecialActionOnEvent] actionKind = %s, actionMod = %s, specialAction = %s, specialAction.ActionContext = %s", actionKind, actionMod, tostring(specialAction), tostring(this:QueryTable(specialAction, "ActionContext")));
+				if (not this:IsAvailable() or (not actionKind and not actionMod)) then
+					return false;
+				end
+				
+				local extraConditionResult = nil;
+				local function CheckExtraCondition()
+					if (extraConditionResult ~= nil) then
+						return extraConditionResult;
+					elseif (condition) then
+						extraConditionResult = condition();
+						return extraConditionResult == true;
+					else
+						return true;
+					end
+				end
+			
+				local resultKind = false;
+				local resultMod = false;
+				local command = this:TranslateActionCommand(actionKind);
+				
+				if (actionMod) then
+					if (CheckExtraCondition()) then
+						if (actionKind and (actionKind ~= GuardStanceActionKind.TransformWeaponLeft and actionKind ~= GuardStanceActionKind.TransformWeaponRight)) then
+							if (not command or env(ActionDuration, command) <= 0) then
+								actionMod = nil;
+								g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+							end
+						end
+						
+						if (actionMod) then
+							-- Set the modifier for the provided object
+							if (specialAction) then
+								specialAction:SetMod(actionMod);
+							end
+							
+							-- Save the modifier for the global object
+							g_GuardStanceMoveset.SpecialAction:SetMod(actionMod);
+							
+							resultMod = true;
+						end
+					end
+				elseif (actionKind and g_GuardStanceMoveset.SpecialAction.ActionMod) then
+					local command = this:TranslateActionModifier(g_GuardStanceMoveset.SpecialAction.ActionMod);
+					if (command and (env(ActionCancelRequest, command) == TRUE or env(ActionDuration, command) <= 0)) then
+						g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+					end
+				end
+				
+				if (actionKind) then
+					local actionContext = nil;
+					if (specialAction) then
+						actionContext = specialAction.ActionContext;
+					else
+						actionContext = g_GuardStanceMoveset.SpecialAction.ActionContext;
+					end
+					
+					if (this:CanInvokeAction(actionKind, actionContext) and CheckExtraCondition()) then
+						local bypassInputCheck = false;
+						if (actionKind == GuardStanceActionKind.TransformWeaponLeft or actionKind == GuardStanceActionKind.TransformWeaponRight) then
+							bypassInputCheck = true;
+						end
+					
+						if (bypassInputCheck or (command and (env(ActionRequest, command) == TRUE or env(ActionDuration, command) > 0))) then
+							if (specialAction) then
+								specialAction:SetKind(actionKind);
+								resultKind = true;
+							else
+								local specialAction = g_GuardStanceMoveset.SpecialAction:Clone();
+								specialAction.ActionKind = actionKind;
+								
+								if (this:TranslateActionOnGlobal(specialAction)) then
+									return true;
+								end
+							end
+						end
+					end
+				end
+				
+				return resultKind, resultMod;
 			end
 	};
 	
-	local movesetOverride = nil;
-	if (not hand or hand ~= -1) then
-		movesetOverride = GetMovesetOverride(hand);
-	end
+	local obj = setmetatable({},
+	{
+		__index = vtbl
+	});
+	obj:GuardStanceMoveset(hand);
 	
-	return setmetatable({MovesetOverride = movesetOverride},
+	return obj;
+end
+
+-- SpecialAction class
+--
+-- Parameters:
+	-- enum GuardStanceActionKind
+function GuardStanceMoveset_SpecialAction(actionContext)
+	local vtbl =
+	{
+		-- public:
+			-- Clones this object. I really don't like Lua when I need to do things like that.
+			--
+			-- Returns: class GuardStanceMoveset_SpecialAction
+			Clone = function(this)
+				local clone = GuardStanceMoveset_SpecialAction(this.ActionContext);
+				clone.ActionKind = this.ActionKind;
+				clone.ActionMod = this.ActionMod;
+				
+				return clone;
+			end,
+		
+			-- Sets the action kind
+			--
+			-- Parameters:
+				-- enum GuardStanceActionKind
+			-- Returns: void
+			SetKind = function(this, actionKind)
+				this.ActionKind = actionKind;
+			end,
+			
+			-- Sets the action modifier, these act similar to Ctrl/Alt/Shift keys
+			--
+			-- Parameters:
+				-- enum GuardStanceActionMod
+			-- Returns: void
+			SetMod = function(this, actionMod)
+				this.ActionMod = actionMod;
+			end,
+			
+			-- Sets the action context
+			--
+			-- Parameters:
+				-- enum GuardStanceActionContext
+			-- Returns: void
+			SetContext = function(this, actionContext)
+				this.ActionContext = actionContext;
+			end
+	};
+	
+	return setmetatable({ActionContext = actionContext},
 	{
 		__index = vtbl
 	});
@@ -920,88 +1153,6 @@ end
 
 -- Global GuardStanceMoveset object. It handles OnUpdate and everything related to it
 g_GuardStanceMoveset = GuardStanceMoveset(-1);
-
--- SpecialAction class
-function GuardStanceMoveset_SpecialAction(guardStanceMoveset)
-	local vtbl =
-	{
-		-- If this is a special action invoked from the guard. Always true at the moment.
-		--
-		-- Returns: bool
-		IsOnGuard = function(this)
-			return this.OnGuard;
-		end,
-		
-		-- Tests of the specific action kind is support by the moveset
-		--
-		-- Parameters:
-			-- enum GuardStanceActionKind
-		-- Returns: bool
-		CanInvokeAction = function(this, actionKind)
-			local moveset = this.GSMRef;
-			return moveset and moveset:IsActionSupported(actionKind);
-		end,
-	
-		-- Sets the action kind
-		--
-		-- Parameters:
-			-- enum GuardStanceActionKind
-		-- Returns: void
-		SetKind = function(this, actionKind)
-			this.ActionKind = actionKind;
-		end,
-		
-		-- Sets the action modifier, these act similar to Ctrl/Alt/Shift keys
-		--
-		-- Parameters:
-			-- enum GuardStanceActionMod
-		-- Returns: void
-		SetMod = function(this, actionMod)
-			this.ActionMod = actionMod;
-		end,
-		
-		-- Helper function that tries to set both the action kind and modifier
-		-- if the conditions are satisfied.
-		--
-		-- Parameters:
-			-- enum GuardStanceActionMod
-		-- Returns: void
-		TryAssign = function(this, actionKind, actionMod, extraCondition)
-			if (this:IsOnGuard()) then
-				local extraConditionResult = nil;
-				local function CheckExtraCondition()
-					if (extraConditionResult ~= nil) then
-						return extraConditionResult;
-					elseif (extraCondition) then
-						extraConditionResult = extraCondition();
-						return extraConditionResult;
-					else
-						return true;
-					end
-				end
-				
-				local resultKind = false;
-				local resultMod = false;
-				if (actionKind and this:CanInvokeAction(actionKind) and CheckExtraCondition()) then
-					this:SetKind(actionKind);
-					resultKind = true;
-				end
-				if (actionMod and CheckExtraCondition()) then
-					this:SetMod(actionMod);
-					resultMod = true;
-				end
-				
-				return resultKind, resultMod;
-			end
-			return false;
-		end
-	};
-	
-	return setmetatable({GSMRef = guardStanceMoveset, OnGuard = true},
-	{
-		__index = vtbl
-	});
-end
 
 -- HKB update handlers
 function AttackBothGuardSpecial1_onUpdate()
@@ -2801,7 +2952,7 @@ function ExecAttack2(request, r1, r2, l1, l2, b1, b2, is_guard, blend_type, arts
     end
 
     act(SetDamageMotionBlendRatio, 0)
-
+	
 	local guardStanceMoveset = GuardStanceMoveset();
 	if (not guardStanceMoveset:OnExecAttack(request, {R1 = r1, R2 = r2, L1 = l1, L2 = l2, B1 = b1, B2 = b2, OnGuard = is_guard == TRUE, Simulated = simulatedRequest})) then
 		return FALSE;
@@ -4766,7 +4917,8 @@ function ExecItem(quick_type, blend_type, specialAction)
     if env(ActionRequest, ACTION_ARM_USE_ITEM) == FALSE then
         return FALSE
 	else
-		if (specialAction and specialAction:TryAssign(GuardStanceActionKind.UseItem)) then
+		local guardStanceMoveset = GuardStanceMoveset();
+		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.UseItem, nil, specialAction)) then
 			return FALSE;
 		end
     end
@@ -5161,10 +5313,9 @@ function ExecWeaponChange(blend_type, specialAction)
         return FALSE
     end
 	
-	if (specialAction and (env(ActionRequest, ACTION_ARM_ACTION) == TRUE or env(ActionDuration, ACTION_ARM_ACTION) > 0)) then
-		if (specialAction:TryAssign(GuardStanceActionKind.EventAction, GuardStanceActionMod.EventAction)) then
-			return FALSE;
-		end
+	local guardStanceMoveset = GuardStanceMoveset();
+	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.EventAction, GuardStanceActionMod.EventAction, specialAction)) then
+		return FALSE;
 	end
 	
     if env(ActionRequest, ACTION_ARM_R1) == TRUE or env(ActionRequest, ACTION_ARM_R2) == TRUE then
@@ -5174,7 +5325,7 @@ function ExecWeaponChange(blend_type, specialAction)
             HandChangeTest_ToL1 = FALSE
             HandChangeTest_ToL2 = FALSE
 			
-			if (specialAction and specialAction:TryAssign(GuardStanceActionKind.TransformWeapon)) then
+			if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.TransformWeaponRight, GuardStanceActionMod.EventAction, specialAction)) then
 				return FALSE;
 			end
 
@@ -5193,7 +5344,7 @@ function ExecWeaponChange(blend_type, specialAction)
         HandChangeTest_ToL1 = FALSE
         HandChangeTest_ToL2 = FALSE
 		
-		if (specialAction and specialAction:TryAssign(GuardStanceActionKind.TransformWeapon)) then
+		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.TransformWeaponLeft, GuardStanceActionMod.EventAction, specialAction)) then
 			return FALSE;
 		end
 
@@ -5207,13 +5358,13 @@ function ExecWeaponChange(blend_type, specialAction)
     end
 	
     if env(ActionRequest, ACTION_ARM_CHANGE_WEAPON_R) == TRUE then
-		if (specialAction and specialAction:TryAssign(GuardStanceActionKind.SwitchWeaponRight)) then
+		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.SwitchWeaponRight, nil, specialAction)) then
 			return FALSE;
 		end
 		
         kind = GetWeaponChangeType(HAND_RIGHT)
     elseif env(ActionRequest, ACTION_ARM_CHANGE_WEAPON_L) == TRUE then
-		if (specialAction and specialAction:TryAssign(GuardStanceActionKind.SwitchWeaponLeft)) then
+		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.SwitchWeaponLeft, nil, specialAction)) then
 			return FALSE;
 		end
 		
@@ -5271,6 +5422,11 @@ function GetHandChangeType(hand)
 end
 
 function ExecJump(specialAction)
+	local guardStanceMoveset = GuardStanceMoveset();
+	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.Jump, nil, specialAction)) then
+		return FALSE;
+	end
+
     -- Note: Restored original value during full remake. Repo values was ACTION_ARM_JUMP instead of ACTION_ARM_CHANGE_STYLE
     -- note: Original decompile of 1.10 has ACTION_ARM_CHANGE_STYLE instead of jump
     if env(ActionRequest, ACTION_ARM_CHANGE_STYLE) == FALSE and env(IsAIJumpRequested) == FALSE then
@@ -5280,44 +5436,6 @@ function ExecJump(specialAction)
         ResetRequest()
         return FALSE
     end
-	
-	local function GetJumpMoveLevel()
-		local JumpMoveLevel = 0
-
-		if GetVariable("LocomotionState") == 1 and GetVariable("MoveSpeedIndex") == 2 then
-			JumpMoveLevel = 2
-		elseif GetVariable("MoveSpeedLevel") >= 0.6000000238418579 then
-			JumpMoveLevel = 1
-		end
-
-		-- Ironjar Aromatic
-		if env(GetSpEffectID, 503520) == TRUE then
-			JumpMoveLevel = 0
-			-- Unknown
-		elseif env(GetSpEffectID, 5520) == TRUE then
-			JumpMoveLevel = 0
-			-- Slug: Slow
-		elseif env(GetSpEffectID, 425) == TRUE then
-			JumpMoveLevel = 0
-			-- Sanguine Noble: Slow
-		elseif env(GetSpEffectID, 4101) == TRUE then
-			JumpMoveLevel = 0
-			-- Sanguine Noble: Slow
-		elseif env(GetSpEffectID, 4100) == TRUE then
-			JumpMoveLevel = 0
-			-- Unknown (DLC)
-		elseif env(GetSpEffectID, 19670) == TRUE then
-			JumpMoveLevel = 0
-		end
-		
-		return JumpMoveLevel;
-	end
-	
-	if (specialAction and specialAction:TryAssign(GuardStanceActionKind.Jump, nil, function()
-		return GetJumpMoveLevel() ~= 2;
-	end)) then
-		return FALSE;
-	end
 
     if env(GetSpEffectID, 102360) == FALSE then
         AddStamina(STAMINA_REDUCE_JUMP)
@@ -5370,7 +5488,33 @@ function ExecJump(specialAction)
         SetVariable("ToggleDash", 0)
     end
 
-    local JumpMoveLevel = GetJumpMoveLevel();
+	local JumpMoveLevel = 0
+	if GetVariable("LocomotionState") == 1 and GetVariable("MoveSpeedIndex") == 2 then
+		JumpMoveLevel = 2
+	elseif GetVariable("MoveSpeedLevel") >= 0.6000000238418579 then
+		JumpMoveLevel = 1
+	end
+
+	-- Ironjar Aromatic
+	if env(GetSpEffectID, 503520) == TRUE then
+		JumpMoveLevel = 0
+		-- Unknown
+	elseif env(GetSpEffectID, 5520) == TRUE then
+		JumpMoveLevel = 0
+		-- Slug: Slow
+	elseif env(GetSpEffectID, 425) == TRUE then
+		JumpMoveLevel = 0
+		-- Sanguine Noble: Slow
+	elseif env(GetSpEffectID, 4101) == TRUE then
+		JumpMoveLevel = 0
+		-- Sanguine Noble: Slow
+	elseif env(GetSpEffectID, 4100) == TRUE then
+		JumpMoveLevel = 0
+		-- Unknown (DLC)
+	elseif env(GetSpEffectID, 19670) == TRUE then
+		JumpMoveLevel = 0
+	end
+	
     if JumpMoveLevel == 2 then
         if env(IsAIJumpRequested) == TRUE then
             act(NotifyAIOfJumpState)
@@ -5648,15 +5792,13 @@ function ExecEvasion(backstep_limit, estep, is_usechainrecover, specialAction)
     if c_HasActionRequest == FALSE then
         return FALSE
     end
-
-    local request = GetEvasionRequest()
 	
-	if (specialAction and (env(ActionRequest, ACTION_ARM_L3) == TRUE or env(ActionDuration, ACTION_ARM_L3) > 0)) then
-		if (specialAction:TryAssign(GuardStanceActionKind.Stealth, GuardStanceActionMod.Stealth)) then
-			return FALSE;
-		end
+	local guardStanceMoveset = GuardStanceMoveset();
+	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.Stealth, GuardStanceActionMod.Stealth, specialAction)) then
+		return FALSE;
 	end
 
+    local request = GetEvasionRequest()
     if env(ActionRequest, ACTION_ARM_L3) == TRUE and c_IsStealth == FALSE then
         StealthTransitionIndexUpdate()
         ExecEvent("W_Stealth_to_Stealth_Idle")
@@ -8071,7 +8213,7 @@ function DamageCommonFunction(guardcondition, estep, fall_type)
     end
 
 	local guardStanceMoveset = GuardStanceMoveset();
-	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable();
+	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable(GuardStanceActionContext.OnGuardEnd);
 	
     if ExecJump() == TRUE then
         return TRUE
@@ -8558,7 +8700,10 @@ function GuardCommonFunction(is_guard_end, blend_type, is_just_guard)
     act(Wait)
 
 	local guardStanceMoveset = GuardStanceMoveset();
-	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable();
+	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable(GuardStanceActionContext.OnGuard);
+	if (is_guard_end == TRUE) then
+		specialAction:SetContext(GuardStanceActionContext.OnGuardEnd);
+	end
 
     if ExecPassiveAction(FALSE, FALL_TYPE_DEFAULT, FALSE) == TRUE then
         return TRUE
@@ -8585,14 +8730,8 @@ function GuardCommonFunction(is_guard_end, blend_type, is_just_guard)
 		return TRUE
 	end
 	
-	if (specialAction) then
-		if (env(ActionRequest, ACTION_ARM_L2) == TRUE or env(ActionDuration, ACTION_ARM_L2) > 0) then
-			specialAction:TryAssign(GuardStanceActionKind.WeaponArt, GuardStanceActionMod.WeaponArt);
-		end
-		if (env(ActionRequest, ACTION_ARM_R3) == TRUE or env(ActionDuration, ACTION_ARM_R3) > 0) then
-			specialAction:TryAssign(GuardStanceActionKind.LockOn, GuardStanceActionMod.LockOn);
-		end
-	end
+	guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.LockOn, GuardStanceActionMod.LockOn, specialAction);
+	guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.WeaponArt, GuardStanceActionMod.WeaponArt, specialAction);
 	
 	if is_guard_end == TRUE then
 		if ExecArtsStanceOnCancelTiming(blend_type) == TRUE then
