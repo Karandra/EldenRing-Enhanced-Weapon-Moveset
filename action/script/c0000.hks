@@ -516,6 +516,127 @@ function GuardStanceMoveset(hand)
 				return this:IsAvailableOnWeapon(this.MovesetOverride);
 			end,
 			
+			-- Handles input events from the global context and dispatches them as necessary
+			--
+			-- Parameters:
+				-- enum GuardStanceActionKind
+				-- enum GuardStanceActionMod
+				-- enum GuardStanceActionContext
+			-- Returns: bool, true if the if we're going to process this event outselves thus preventing it from activating
+			HandleSpecialActionOnEvent = function(this, actionKind, actionMod, specialAction, condition)
+				--this:DebugOutput("[HandleSpecialActionOnEvent] actionKind = %s, actionMod = %s, specialAction = %s, specialAction.ActionContext = %s", actionKind, actionMod, tostring(specialAction), tostring(this:QueryTable(specialAction, "ActionContext")));
+				if (not this:IsAvailable() or (not actionKind and not actionMod)) then
+					return false;
+				end
+				
+				local extraConditionResult = nil;
+				local function CheckExtraCondition()
+					if (extraConditionResult ~= nil) then
+						return extraConditionResult;
+					elseif (condition) then
+						extraConditionResult = condition();
+						return extraConditionResult == true;
+					else
+						return true;
+					end
+				end
+			
+				local resultKind = false;
+				local resultMod = false;
+				local command = this:TranslateActionCommand(actionKind);
+				
+				if (actionMod) then
+					if (CheckExtraCondition()) then
+						if (actionKind and (actionKind ~= GuardStanceActionKind.TransformWeaponLeft and actionKind ~= GuardStanceActionKind.TransformWeaponRight)) then
+							if (not command or env(ActionDuration, command) <= 0) then
+								actionMod = nil;
+								g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+							end
+						end
+						
+						if (actionMod) then
+							-- Set the modifier for the provided object
+							if (specialAction) then
+								specialAction:SetMod(actionMod);
+							end
+							
+							-- Save the modifier for the global object
+							g_GuardStanceMoveset.SpecialAction:SetMod(actionMod);
+							
+							resultMod = true;
+						end
+					end
+				elseif (actionKind and g_GuardStanceMoveset.SpecialAction.ActionMod) then
+					local command = this:TranslateActionModifier(g_GuardStanceMoveset.SpecialAction.ActionMod);
+					if (command and (env(ActionCancelRequest, command) == TRUE or env(ActionDuration, command) <= 0)) then
+						g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+					end
+				end
+				
+				if (actionKind) then
+					local actionContext = nil;
+					if (specialAction) then
+						actionContext = specialAction.ActionContext;
+					else
+						actionContext = g_GuardStanceMoveset.SpecialAction.ActionContext;
+					end
+					
+					if (this:CanInvokeAction(actionKind, actionContext) and CheckExtraCondition()) then
+						local bypassInputCheck = false;
+						if (actionKind == GuardStanceActionKind.TransformWeaponLeft or actionKind == GuardStanceActionKind.TransformWeaponRight) then
+							bypassInputCheck = true;
+						end
+					
+						if (bypassInputCheck or (command and (env(ActionRequest, command) == TRUE or env(ActionDuration, command) > 0))) then
+							if (specialAction) then
+								specialAction:SetKind(actionKind);
+								resultKind = true;
+							else
+								local specialAction = g_GuardStanceMoveset.SpecialAction:Clone();
+								specialAction.ActionKind = actionKind;
+								
+								if (this:TranslateActionOnGlobal(specialAction)) then
+									return true;
+								end
+							end
+						end
+					end
+				end
+				
+				return resultKind, resultMod;
+			end,
+			
+			-- Translate the special action from global state. The translation isn't done into action data,
+			-- the function will have to execute the attack itself.
+			-- Called from various 'Exec*' and '*CommonFunction' functions.
+			--
+			-- Parameters:
+				-- const class SpecialAction& 
+			-- Returns: struct Action
+			TranslateActionOnGlobal = function(this, specialAction)
+				--this:DebugOutput("[TranslateActionOnGlobal] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
+				
+				-- We always have special action here
+				local actionKind = specialAction.ActionKind;
+				local actionMod = specialAction.ActionMod;
+				
+				if (this:IsMagicTranslationAllowed()) then
+					if (actionMod == GuardStanceActionMod.EventAction and actionKind == GuardStanceActionKind.TransformWeaponLeft) then
+						-- In general, any result of ExecMagic is a reason to interrupt any event that called us, since we don't want
+						-- things like being out of stamina to play the usual action. The only way that should happen if the opposite
+						-- hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
+						-- casting action available.
+						
+						local success, reason = this:ExecMagicTranslation();
+						if (not success and (reason == 1 or reason == 2)) then
+							return false;
+						end
+						return true;
+					end
+				end
+				return false;
+			end,
+			
 			-- Translate the animation events for '*_onUpdate' functions.
 			-- Taking the update function kind from GuardStanceOnUpdate and the Action struct
 			-- the function is going to transform the events into the moves of the new moveset.
@@ -657,37 +778,6 @@ function GuardStanceMoveset(hand)
 				end
 				
 				return action;
-			end,
-			
-			-- Translate the special action from global state. The translation isn't done into action data,
-			-- the function will have to execute the attack itself.
-			-- Called from various 'Exec*' and '*CommonFunction' functions.
-			--
-			-- Parameters:
-				-- const class SpecialAction& 
-			-- Returns: struct Action
-			TranslateActionOnGlobal = function(this, specialAction)
-				--this:DebugOutput("[TranslateActionOnGlobal] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
-				
-				-- We always have special action here
-				local actionKind = specialAction.ActionKind;
-				local actionMod = specialAction.ActionMod;
-				
-				if (this:IsMagicTranslationAllowed()) then
-					if (actionMod == GuardStanceActionMod.EventAction and actionKind == GuardStanceActionKind.TransformWeaponLeft) then
-						-- In general, any result of ExecMagic is a reason to interrupt any event that called us, since we don't want
-						-- things like being out of stamina to play the usual action. The only way that should happen if the opposite
-						-- hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
-						-- casting action available.
-						
-						local success, reason = this:ExecMagicTranslation();
-						if (not success and (reason == 1 or reason == 2)) then
-							return false;
-						end
-						return true;
-					end
-				end
-				return false;
 			end,
 			
 			-- Translate the special action from guard stance into attack action data.
@@ -1330,96 +1420,6 @@ function GuardStanceMoveset(hand)
 				end
 				return nil;
 			end,
-			
-			-- TODO
-			--
-			-- Parameters:
-				-- enum GuardStanceActionKind
-				-- enum GuardStanceActionMod
-				-- enum GuardStanceActionContext
-			-- Returns: bool, true if the if we're going to process this event outselves thus preventing it from activating
-			HandleSpecialActionOnEvent = function(this, actionKind, actionMod, specialAction, condition)
-				--this:DebugOutput("[HandleSpecialActionOnEvent] actionKind = %s, actionMod = %s, specialAction = %s, specialAction.ActionContext = %s", actionKind, actionMod, tostring(specialAction), tostring(this:QueryTable(specialAction, "ActionContext")));
-				if (not this:IsAvailable() or (not actionKind and not actionMod)) then
-					return false;
-				end
-				
-				local extraConditionResult = nil;
-				local function CheckExtraCondition()
-					if (extraConditionResult ~= nil) then
-						return extraConditionResult;
-					elseif (condition) then
-						extraConditionResult = condition();
-						return extraConditionResult == true;
-					else
-						return true;
-					end
-				end
-			
-				local resultKind = false;
-				local resultMod = false;
-				local command = this:TranslateActionCommand(actionKind);
-				
-				if (actionMod) then
-					if (CheckExtraCondition()) then
-						if (actionKind and (actionKind ~= GuardStanceActionKind.TransformWeaponLeft and actionKind ~= GuardStanceActionKind.TransformWeaponRight)) then
-							if (not command or env(ActionDuration, command) <= 0) then
-								actionMod = nil;
-								g_GuardStanceMoveset.SpecialAction:SetMod(nil);
-							end
-						end
-						
-						if (actionMod) then
-							-- Set the modifier for the provided object
-							if (specialAction) then
-								specialAction:SetMod(actionMod);
-							end
-							
-							-- Save the modifier for the global object
-							g_GuardStanceMoveset.SpecialAction:SetMod(actionMod);
-							
-							resultMod = true;
-						end
-					end
-				elseif (actionKind and g_GuardStanceMoveset.SpecialAction.ActionMod) then
-					local command = this:TranslateActionModifier(g_GuardStanceMoveset.SpecialAction.ActionMod);
-					if (command and (env(ActionCancelRequest, command) == TRUE or env(ActionDuration, command) <= 0)) then
-						g_GuardStanceMoveset.SpecialAction:SetMod(nil);
-					end
-				end
-				
-				if (actionKind) then
-					local actionContext = nil;
-					if (specialAction) then
-						actionContext = specialAction.ActionContext;
-					else
-						actionContext = g_GuardStanceMoveset.SpecialAction.ActionContext;
-					end
-					
-					if (this:CanInvokeAction(actionKind, actionContext) and CheckExtraCondition()) then
-						local bypassInputCheck = false;
-						if (actionKind == GuardStanceActionKind.TransformWeaponLeft or actionKind == GuardStanceActionKind.TransformWeaponRight) then
-							bypassInputCheck = true;
-						end
-					
-						if (bypassInputCheck or (command and (env(ActionRequest, command) == TRUE or env(ActionDuration, command) > 0))) then
-							if (specialAction) then
-								specialAction:SetKind(actionKind);
-								resultKind = true;
-							else
-								local specialAction = g_GuardStanceMoveset.SpecialAction:Clone();
-								specialAction.ActionKind = actionKind;
-								
-								if (this:TranslateActionOnGlobal(specialAction)) then
-									return true;
-								end
-							end
-						end
-					end
-				end
-				
-				return resultKind, resultMod;
-			end
 	};
 	
 	local obj = setmetatable({},
