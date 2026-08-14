@@ -640,7 +640,7 @@ function GuardStanceMoveset(hand)
 			-- Translate the animation events for '*_onUpdate' functions.
 			-- Taking the update function kind from GuardStanceOnUpdate and the Action struct
 			-- the function is going to transform the events into the moves of the new moveset.
-			-- The 'Request' and 'OnGuard' fields are ignored by this function.
+			-- The 'Request' and 'ActionContext' fields are ignored by this function.
 			--
 			-- Parameters:
 				-- enum GuardStanceOnUpdate
@@ -790,10 +790,12 @@ function GuardStanceMoveset(hand)
 				--this:DebugOutput("[TranslateActionOnGuard] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
 				
 				local attackRequest = nil;
+				local actionContext = GuardStanceActionContext.OnGuard;
 				local b1 = "W_AttackBothLight2";
 				local b2 = "W_AttackBothHeavy1aStart";
 				
 				if (specialAction) then
+					actionContext = specialAction.ActionContext;
 					local actionKind = specialAction.ActionKind;
 					local actionMod = specialAction.ActionMod;
 					
@@ -817,7 +819,7 @@ function GuardStanceMoveset(hand)
 					end
 				end
 				
-				return {Request = attackRequest, B1 = b1, B2 = b2};
+				return {Request = attackRequest, ActionContext = actionContext, B1 = b1, B2 = b2};
 			end,
 			
 			-- Translate the animation events for 'JumpLandCommonFunction' function. Same idea
@@ -935,7 +937,7 @@ function GuardStanceMoveset(hand)
 			-- to ExecAttack.
 			-- Missing attack events in the Action struct are replaced by the default values.
 			--
-			-- Parameters: const Action& {.Request, .OnGuard, .R1, .R2, .L1, .L2, .B1, .B2}
+			-- Parameters: const Action& {.Request, .ActionContext, .R1, .R2, .L1, .L2, .B1, .B2}
 			-- Returns: bool
 			ExecAttack = function(this, action, ...)
 				local r1 = action.R1;
@@ -944,6 +946,7 @@ function GuardStanceMoveset(hand)
 				local l2 = action.L2;
 				local b1 = action.B1;
 				local b2 = action.B2;
+				local actionContext = action.ActionContext;
 				
 				if (not r1) then
 					r1 = "W_AttackRightLight1";
@@ -965,7 +968,7 @@ function GuardStanceMoveset(hand)
 				end
 				
 				local guardAttack = FALSE;
-				if (action.OnGuard) then
+				if (actionContext == GuardStanceActionContext.OnGuard or actionContext == GuardStanceActionContext.OnGuardEnd) then
 					guardAttack = TRUE;
 				end
 				
@@ -9118,7 +9121,6 @@ function GuardCommonFunction(is_guard_end, blend_type, is_just_guard)
 		
 		if (guardStanceMoveset:Refresh():IsAvailable()) then
 			local action = guardStanceMoveset:TranslateActionOnGuard(specialAction);
-			action.OnGuard = guard_attack == TRUE or is_guard_end == TRUE;
 			action.R1 = "W_AttackRightLight1";
 			action.R2 = "W_AttackRightHeavy1Start";
 			action.L1 = nil;
