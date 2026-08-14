@@ -4,3 +4,4 @@
 * text=auto
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.dcx filter=lfs diff=lfs merge=lfs -text
+*.dsaproj filter=lfs diff=lfs merge=lfs -text
