@@ -334,7 +334,7 @@ function GuardStanceMoveset(hand)
 					local success, err = xpcall(tryFunc, catchFunc);
 					
 					if (success) then
-						return true;
+						return true, err;
 					else
 						this:DebugOutput("[TryCatch] Exception Caught: %s", err);
 					end
@@ -342,7 +342,7 @@ function GuardStanceMoveset(hand)
 					local success, err = pcall(tryFunc);
 					
 					if (success) then
-						return true;
+						return true, err;
 					else
 						this:DebugOutput("[TryCatch] Exception Caught: %s", err);
 					end
