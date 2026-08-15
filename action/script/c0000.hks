@@ -131,6 +131,9 @@ local GuardStanceActionContext =
 	-- Any context that isn't already handled by the below options
 	Global = -1,
 	
+	OnJumpAttack = 10,
+	OnJumpMagic = 11,
+	
 	-- When guard is actively held
 	OnGuard = 100,
 	
@@ -217,6 +220,24 @@ local g_GuardStanceMoveset = nil;
 function GuardStanceMoveset(hand)
 	local vtbl =
 	{
+		-- public [static]:
+			MagicTranslationStatus =
+			{
+				TwoHandingRequired = 1,
+				InvalidCatalyst = 2,
+				InvalidSpell = 3
+			},
+			MagicTranslationQuickType
+			{
+				Normal = QUICKTYPE_NORMAL, -- 0
+				Dash = QUICKTYPE_DASH, -- 1
+				Rolling = QUICKTYPE_ROLLING, -- 2
+				Attack = QUICKTYPE_ATTACK, -- 3
+				Combo = QUICKTYPE_COMBO, -- 4
+				Backstep = QUICKTYPE_BACKSTEP, -- 5
+				Run = QUICKTYPE_RUN -- 6
+			},
+		
 		-- public [static]:
 			-- Parameters:
 				-- int hand: the hand to check weapon for, if nil the active hand is used
@@ -516,6 +537,67 @@ function GuardStanceMoveset(hand)
 				return this:IsAvailableOnWeapon(this.MovesetOverride);
 			end,
 			
+			-- Reads input for the provided action. Supposed to be used to detect input on your own when
+			-- the event doesn't already do that. Stores the read inout into the provided special action.
+			--
+			-- Parameters:
+				-- enum GuardStanceActionKind
+				-- enum GuardStanceActionMod
+			-- Returns:
+				-- bool, true if the action kind input is detected
+				-- bool, true if the action mod input is detected
+			ReadActionInputOnEvent = function(this, specialAction, actionKind, actionMod)
+				--this:DebugOutput("[ReadActionInputOnEvent] specialAction = %s, actionKind = %s, actionMod = %s", tostring(specialAction), tostring(actionKind), tostring(actionMod));
+				
+				local resultKind = false;
+				local resultMod = false;
+				
+				if (actionMod) then
+					local command = this:TranslateActionModifier(actionMod);
+					if (command and env(ActionDuration, command) > 0) then
+						specialAction.ActionMod = actionMod;
+						resultMod = true;
+					end
+				end
+				
+				if (actionKind) then
+					local command = this:TranslateActionCommand(actionKind);
+					if (command and (env(ActionRequest, command) == TRUE or env(ActionDuration, command) > 0)) then
+						specialAction.ActionKind = actionKind;
+						resultKind = true;
+					elseif (actionKind == GuardStanceActionKind.TransformWeaponLeft or actionKind == GuardStanceActionKind.TransformWeaponRight) then
+						local arm1 = ACTION_ARM_L1;
+						local arm2 = ACTION_ARM_L2;
+						if (actionKind == GuardStanceActionKind.TransformWeaponRight) then
+							local arm1 = ACTION_ARM_R1;
+							local arm2 = ACTION_ARM_R2;
+						end
+						
+						local eventActionDuration = env(ActionDuration, ACTION_ARM_ACTION);
+						if (specialAction.ActionContext == GuardStanceActionContext.OnJumpMagic) then
+							if (eventActionDuration > 0 and (env(ActionDuration, arm1) > 0 or env(ActionDuration, arm2) > 0)) then
+								specialAction.ActionMod = GuardStanceActionMod.EventAction;
+								specialAction.ActionKind = actionKind;
+								
+								resultMod = true;
+								resultKind = true;
+							end
+						else
+							if (eventActionDuration > 0 and (env(ActionRequest, arm1) == TRUE or env(ActionRequest, arm2) == TRUE)) then
+								specialAction.ActionMod = GuardStanceActionMod.EventAction;
+								specialAction.ActionKind = actionKind;
+								
+								resultMod = true;
+								resultKind = true;
+							end
+						end
+					end
+				end
+				
+				--this:DebugOutput("[ReadActionInputOnEvent] resultKind = %s, resultMod = %s", resultKind, resultMod);
+				return resultKind, resultMod;
+			end,
+			
 			-- Handles input events from the global context and dispatches them as necessary
 			--
 			-- Parameters:
@@ -612,7 +694,7 @@ function GuardStanceMoveset(hand)
 			--
 			-- Parameters:
 				-- const class SpecialAction& 
-			-- Returns: struct Action
+			-- Returns: bool, true if we handled the event, false otherwise
 			TranslateActionOnGlobal = function(this, specialAction)
 				--this:DebugOutput("[TranslateActionOnGlobal] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
 				
@@ -627,8 +709,10 @@ function GuardStanceMoveset(hand)
 						-- hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
 						-- casting action available.
 						
+						local MagicTranslationStatus = this.MagicTranslationStatus;
+						
 						local success, reason = this:ExecMagicTranslation();
-						if (not success and (reason == 1 or reason == 2)) then
+						if (not success and (reason == MagicTranslationStatus.TwoHandingRequired or reason == MagicTranslationStatus.InvalidCatalyst)) then
 							return false;
 						end
 						return true;
@@ -829,7 +913,7 @@ function GuardStanceMoveset(hand)
 				-- enum GuardStanceOnUpdate
 				-- struct Action&
 			-- Returns: struct Action&
-			TranslateActionOnJump = function(this, onUpdateKind, action)
+			TranslateActionOnJumpAttack = function(this, onUpdateKind, action)
 				if (not this:IsAvailable()) then
 					return action;
 				end
@@ -845,6 +929,29 @@ function GuardStanceMoveset(hand)
 				end
 				
 				return action;
+			end,
+			
+			-- Translate the special action and a jump type into jump magic attack action.
+			-- Called from 'JumpCommonFunction' and 'Jump_Loop_onUpdate' functions.
+			--
+			-- Parameters:
+				-- const class SpecialAction& 
+				-- int jump_type: 0 = W_JumpAttack_Start_Falling, 1 = W_JumpAttack_Start_Falling_F, 2 = W_JumpAttack_Start_Falling_D
+			-- Returns: bool, true if we handled the event, false otherwise
+			TranslateActionOnJumpMagic = function(this, specialAction, jump_type)
+				--this:DebugOutput("[TranslateActionOnJumpMagic] specialAction = %s, jump_type = %s", tostring(specialAction), tostring(jump_type));
+				
+				if (this:IsMagicTranslationAllowed()) then
+					if (specialAction) then
+						local actionKind = specialAction.ActionKind;
+						local actionMod = specialAction.ActionMod;
+						
+						if (actionMod == GuardStanceActionMod.EventAction and actionKind == GuardStanceActionKind.TransformWeaponLeft) then
+							return this:ExecMagicTranslation(nil, nil, jump_type);
+						end
+					end
+				end
+				return false;
 			end,
 			
 			-- Translate the animation events for dodge attack chain (called from 'ExecAttack')
@@ -978,13 +1085,17 @@ function GuardStanceMoveset(hand)
 			-- Executes the magic cast event using a valid spell catalyst in the opposite hand.
 			--
 			-- Parameters:
-				-- int quick_type: one of the QUICKTYPE_* values. Will be requested from hkb if nil.
+				-- int quick_type: one of the QUICKTYPE_* (or MagicTranslationQuickType) values. Will be requested from hkb if nil.
 				-- int blend_type: ALLBODY, UPPER or LOWER. ALLBODY is used if nil.
+				-- int jump_type: 0 = W_JumpAttack_Start_Falling, 1 = W_JumpAttack_Start_Falling_F, 2 = W_JumpAttack_Start_Falling_D
 			-- Returns:
 				-- bool: true if sucessful, false otherwise
-				-- int or nil: 1 if not two-handing weapon, 2 if invalid weapon equipped
-			ExecMagicTranslation = function(this, quick_type, blend_type)
-				--this:DebugOutput("[ExecMagicTranslation] quick_type = %s, blend_type = %s", tostring(quick_type), tostring(blend_type));
+				-- MagicTranslationStatus: nil if success
+			ExecMagicTranslation = function(this, quick_type, blend_type, jump_type)
+				--this:DebugOutput("[ExecMagicTranslation] quick_type = %s, blend_type = %s, jump_type = %s", tostring(quick_type), tostring(blend_type), tostring(jump_type));
+				
+				local MagicTranslationStatus = this.MagicTranslationStatus;
+				local MagicTranslationQuickType = this.MagicTranslationQuickType;
 				
 				if c_HasActionRequest == FALSE then
 					return false;
@@ -994,6 +1105,12 @@ function GuardStanceMoveset(hand)
 				end
 				if env(IsMagicUseMenuOpened) == TRUE then
 					return false;
+				end
+				if (jump_type) then
+					if (GetVariable("JumpAttackForm") >= 1 or IS_ATTACKED_JUMPMAGIC == TRUE) then
+						ResetRequest();
+						return false;
+					end
 				end
 				
 				local style = c_Style;
@@ -1011,18 +1128,14 @@ function GuardStanceMoveset(hand)
 					magic_hand = HAND_RIGHT;
 					magicButton = ACTION_ARM_MAGIC_R;
 					--]]
-					return false, 1;
+					return false, MagicTranslationStatus.InvalidCatalyst;
 				else
-					return false, 1;
+					return false, MagicTranslationStatus.TwoHandingRequired;
 				end
 				
 				-- Staves and seals for some reasons are all WEAPON_CATEGORY_STAFF
 				local equipType = env(GetEquipWeaponCategory, magic_hand);
-				local movesetOverride = env(GetEquipWeaponSpecialCategoryNumber, magic_hand);
-				
-				-- 240: all seals
-				-- 290: Staff of the Great Beyond
-				if (equipType == WEAPON_CATEGORY_STAFF and (movesetOverride == 240 or movesetOverride == 290)) then
+				if (equipType == WEAPON_CATEGORY_STAFF) then
 					if (env(IsMagicUseMenuOpening, magic_hand) == TRUE) then
 						ResetRequest();
 						act(OpenMenuWhenUsingMagic, magicButton);
@@ -1099,13 +1212,15 @@ function GuardStanceMoveset(hand)
 							return this:AnyOf(
 							{
 								-- Sorcery
-								-- Most need to use right hand to look right, but that causes several issues:
-								-- * First, if tight hand is set, the spell is going to have no scaling which is totally something we don't want.
-								-- * Second, chargeable spells lose their charge option, not sure why.
+								-- Most need to use the right hand to look correct, but that causes several issues:
+								-- * First, if the right hand is set, the spell is going to have no scaling which is totally something we don't want.
+									-- I'm totally at loss about how to solve that.
+								-- * Second, chargeable spells lose their charge option. Not sure why, probably expect different input.
+									-- These probably work the same as weapon charge attacks so I'd have to find their behaviors and change the charge input.
 								-- * Third, most cast visuals are going to be missing if they're supposed to spawn on the staff.
-								-- With the issues above unsolved, we can only allow right hand for spells that don't scale and have
-								-- correct visuals when in right hand. All That leaves us only a few utility spells. Maybe it's better to disable
-								-- sorcery at all.
+									-- Can be easily fixed when everything else is done.
+								-- With the issues above present, at the moment, we can only allow right hand for spells that don't scale and have correct
+								-- visuals when in right hand. All That leaves us only a few utility spells. It's better to disable sorcery at all for now.
 								
 								--1, -- Glintstone Pebble, Great Glintstone Shard, Glintstone Icecrag
 								--2, -- Glintstone Cometshard, Comet, Shard Spiral, Night Comet
@@ -1167,25 +1282,45 @@ function GuardStanceMoveset(hand)
 						end
 						return false;
 					end
+					local function IsInvalidMagic(magic_index, movesetOverride)
+						-- 240: all seals
+						-- 290: Staff of the Great Beyond
+						
+						if (movesetOverride == 290) then
+							return IsSorcery(magic_index);
+						elseif (movesetOverride ~= 240) then
+							return true;
+						end
+						return false;
+					end
+					local function IsAutoAimMagic(magic_index)
+						-- Nothing uses this, what even it is for? Moved into a function to get it out of the way.
+						return this:AnyOf(
+						{
+							MAGIC_REQUEST_WHIP,
+							MAGIC_REQUEST_SLASH,
+							MAGIC_REQUEST_QUICKSLASH,
+							MAGIC_REQUEST_FLAME_GRAB,
+							MAGIC_REQUEST_CRUSH,
+							MAGIC_REQUEST_CHOP,
+							MAGIC_REQUEST_SCYTHE
+						}, magic_index);
+					end
 					
 					act(DecideMagicUse)
 					act(NotifyAIMagicCast)
 					UpdateMagicIndexFully();
 					
+					if (jump_type) then
+						if (IsJumpMagic() == FALSE and IsQuickMagic() == FALSE) then
+							ResetRequest();
+							return false;
+						end
+					end
+					
 					local magic_index = env(GetMagicAnimType)
-					g_MagicIndex = magic_index
-					g_Magichand = magic_hand
-					local lastMagicMem = lastUsedMagicAnim
-					lastUsedMagicAnim = magic_index
-					--this:DebugOutput("[ExecMagicTranslation] magic_index = %s, lastMagicMem = %s", magic_index, lastMagicMem);
+					--this:DebugOutput("[ExecMagicTranslation] magic_index = %s, lastUsedMagicAnim = %s", magic_index, lastUsedMagicAnim);
 					
-					if (movesetOverride == 290 and IsSorcery(magic_index)) then
-						return false, 2;
-					end
-					
-					if (not blend_type or c_IsStealth == TRUE) then
-						blend_type = ALLBODY
-					end
 					if (not quick_type) then
 						local moveSpeed = GetVariable("MoveSpeedIndex");
 						if moveSpeed == 2 then
@@ -1197,94 +1332,178 @@ function GuardStanceMoveset(hand)
 						end
 					end
 					
-					if blend_type == ALLBODY and MoveStart(LOWER, Event_Move, FALSE) == TRUE then
-						local move_event = Event_Move
-						if IsStealthMagic(magic_index) == TRUE and c_IsStealth == TRUE then
-							move_event = Event_Stealth_Move
+					if (not jump_type) then
+						if (not blend_type or c_IsStealth == TRUE) then
+							blend_type = ALLBODY;
 						end
-						if MoveStart(LOWER, move_event, FALSE) == TRUE then
-							blend_type = UPPER
+						if (blend_type == ALLBODY and MoveStart(LOWER, Event_Move, FALSE) == TRUE) then
+							local move_event = Event_Move;
+							if (IsStealthMagic(magic_index) == TRUE and c_IsStealth == TRUE) then
+								move_event = Event_Stealth_Move;
+							end
+							if (MoveStart(LOWER, move_event, FALSE) == TRUE) then
+								blend_type = UPPER;
+							end
 						end
 					end
 					
-					if env(IsMagicUseable, magic_hand, 0) == FALSE then
-						act(DebugLogOutput, "Event_MagicInvalid_Cannot_Use_Magic")
-						SetVariable("IndexMagicHand", magic_hand)
-						ExecEventHalfBlend(Event_MagicInvalid, blend_type)
+					if (env(IsMagicUseable, magic_hand, 0) == FALSE) then
+						--this:DebugOutput("[ExecMagicTranslation] Event_MagicInvalid (Cannot use magic)");
 						
-						act(SetIsMagicInUse, TRUE)
-						act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID))
-						SetAIActionState()
-						
-						return true;
-					end
-
-					if magic_index == 254 or magic_index == 255 then
-						SetVariable("IndexMagicHand", magic_hand)
-						act(DebugLogOutput, "Event_MagicInvalid_InvalidMagic")
-						ExecEventHalfBlend(Event_MagicInvalid, blend_type)
-						
-						act(SetIsMagicInUse, TRUE)
-						act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID))
-						SetAIActionState()
-						
-						return true;
-					end
-					
-					SetVariable("MagicRight_ShieldCategory", 0);
-					if magic_index == MAGIC_REQUEST_GRAVITY or magic_index == MAGIC_REQUEST_METEOR or magic_index
-						== MAGIC_REQUEST_BLASTING or magic_index == MAGIC_REQUEST_DRILL or magic_index == MAGIC_REQUEST_MAGIC_SPARK
-						or magic_index == 115 or magic_index == 120 or magic_index == 121 or magic_index == 157 or magic_index == 82
-						or magic_index == 150 or magic_index == 156 or magic_index == 161 then
-						SetVariable("Magic_SpecialStaffCategory", 0)
-					elseif magic_index == 141 or magic_index == 128 or magic_index == 146 then
-						if env(GetEquipWeaponSpecialCategoryNumber, magic_hand) == 290 then -- Staff of the Great Beyond
-							SetVariable("Magic_SpecialStaffCategory", 1)
+						if (jump_type) then
+							ResetRequest();
+							return false;
 						else
-							SetVariable("Magic_SpecialStaffCategory", 0)
+							SetVariable("IndexMagicHand", magic_hand);
+							ExecEventHalfBlend(Event_MagicInvalid, blend_type);
+							
+							act(SetIsMagicInUse, TRUE);
+							act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+							SetAIActionState();
+							
+							return true;
 						end
-					else
-						SetVariable("Magic_SpecialStaffCategory", 0)
 					end
 					
-					local is_atk_auto_aim = FALSE;
-					if magic_index == MAGIC_REQUEST_WHIP or magic_index == MAGIC_REQUEST_SLASH or magic_index == MAGIC_REQUEST_QUICKSLASH
-						or magic_index == MAGIC_REQUEST_FLAME_GRAB or magic_index == MAGIC_REQUEST_CRUSH or magic_index
-						== MAGIC_REQUEST_CHOP or magic_index == MAGIC_REQUEST_SCYTHE then
-						is_atk_auto_aim = TRUE;
+					local movesetOverride = env(GetEquipWeaponSpecialCategoryNumber, magic_hand);
+					if (magic_index == 254 or magic_index == 255 or IsInvalidMagic(magic_index, movesetOverride)) then
+						--this:DebugOutput("[ExecMagicTranslation] Event_MagicInvalid (InvalidMagic)");
+						
+						if (jump_type) then
+							ResetRequest();
+							return false;
+						else
+							SetVariable("IndexMagicHand", magic_hand);
+							ExecEventHalfBlend(Event_MagicInvalid, blend_type);
+							
+							act(SetIsMagicInUse, TRUE);
+							act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+							SetAIActionState();
+							
+							return true;
+						end
 					end
+					
+					-- Not sure this really is required here. Looks like something to move shield out of the way?
+					if (not jump_type) then
+						SetVariable("MagicRight_ShieldCategory", 0);
+						if (magic_index == MAGIC_REQUEST_GRAVITY or magic_index == MAGIC_REQUEST_METEOR or magic_index
+							== MAGIC_REQUEST_BLASTING or magic_index == MAGIC_REQUEST_DRILL or magic_index == MAGIC_REQUEST_MAGIC_SPARK
+							or magic_index == 115 or magic_index == 120 or magic_index == 121 or magic_index == 157 or magic_index == 82
+							or magic_index == 150 or magic_index == 156 or magic_index == 161) then
+							SetVariable("Magic_SpecialStaffCategory", 0);
+						elseif (magic_index == 141 or magic_index == 128 or magic_index == 146) then
+							if (env(GetEquipWeaponSpecialCategoryNumber, magic_hand) == 290) then -- Staff of the Great Beyond
+								SetVariable("Magic_SpecialStaffCategory", 1);
+							else
+								SetVariable("Magic_SpecialStaffCategory", 0);
+							end
+						else
+							SetVariable("Magic_SpecialStaffCategory", 0);
+						end
+					end
+					
+					if (jump_type) then
+						if (ShouldUseRightHand(magic_index)) then
+							magic_hand = HAND_RIGHT;
+						end
+					
+						if (IsJumpMagic() == TRUE) then
+							if (magic_hand == HAND_RIGHT) then
+								ExecEventHalfBlend(Event_MagicFireRightJump, ALLBODY);
+								--this:DebugOutput("[ExecMagicTranslation] Event_MagicFireRightJump");
+							else
+								ExecEventHalfBlend(Event_MagicFireLeftJump, ALLBODY);
+								--this:DebugOutput("[ExecMagicTranslation] Event_MagicFireLeftJump");
+							end
 
-					if magic_index == 127 and env(GetSpEffectID, 19975) == TRUE then
+							IS_ATTACKED_JUMPMAGIC = TRUE;
+							act(SetIsMagicInUse, TRUE);
+							act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+							SetAIActionState();
+							return true;
+						elseif (env(GetSpEffectID, 140) == TRUE and GetVariable("JumpAttackForm") == 0) then
+							ExecEventSync("Event_JumpNormalAttack_Add");
+							--this:DebugOutput("[ExecMagicTranslation] Event_JumpNormalAttack_Add");
+							
+							SetVariable("JumpAttackFormRequest", 3);
+							SetVariable("JumpAttackForm", 4);
+
+							if (magic_hand == HAND_LEFT) then
+								SetVariable("JumpAttack_HandCondition", 2);
+							else
+								SetVariable("JumpAttack_HandCondition", 0);
+							end
+
+							act(SetIsMagicInUse, TRUE);
+							act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+							SetAIActionState();
+							
+							return true;
+						elseif (env(GetSpEffectID, 140) == FALSE and GetVariable("JumpAttack_Land") == 0 and GetVariable("JumpAttackForm") == 0) then
+							SetVariable("JumpAttack_Land", 0);
+							SetVariable("JumpAttackFormRequest", 3);
+							SetVariable("JumpAttackForm", 4);
+
+							if (magic_hand == HAND_LEFT) then
+								SetVariable("JumpAttack_HandCondition", 2);
+							else
+								SetVariable("JumpAttack_HandCondition", 0);
+							end
+
+							if (jump_type == 0) then
+								ExecEventNoReset("W_JumpAttack_Start_Falling");
+								--this:DebugOutput("[ExecMagicTranslation] W_JumpAttack_Start_Falling");
+							elseif (jump_type == 1) then
+								ExecEventNoReset("W_JumpAttack_Start_Falling_F");
+								--this:DebugOutput("[ExecMagicTranslation] W_JumpAttack_Start_Falling_F");
+							elseif (jump_type == 2) then
+								ExecEventNoReset("W_JumpAttack_Start_Falling_D");
+								--this:DebugOutput("[ExecMagicTranslation] W_JumpAttack_Start_Falling_D");
+							end
+
+							act(SetIsMagicInUse, TRUE);
+							act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+							SetAIActionState();
+							return true;
+						end
+						return false;
+					else
+						if (magic_index == 127 and env(GetSpEffectID, 19975) == TRUE) then
+							return true;
+						end
+						
+						g_MagicIndex = magic_index;
+						g_Magichand = magic_hand;
+						local lastMagicMem = lastUsedMagicAnim;
+						lastUsedMagicAnim = magic_index;
+						
+						if (ShouldUseRightHand(magic_index)) then
+							magic_hand = HAND_RIGHT;
+						end
+						
+						if (ExecComboMagic(magic_hand, blend_type, lastMagicMem, magic_index) == TRUE) then
+							--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecComboMagic", magic_index);
+						elseif (ExecQuickMagic(magic_hand, quick_type, blend_type) == TRUE) then
+							--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecQuickMagic", magic_index);
+						elseif (ExecStealthMagic(magic_hand, magic_index, blend_type) == TRUE) then
+							--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecStealthMagic", magic_index);
+						elseif (magic_hand == HAND_RIGHT) then
+							ExecEventHalfBlend(Event_MagicLaunchRight, blend_type);
+							--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecEventHalfBlend(Event_MagicLaunchRight)", magic_index);
+						else
+							ExecEventHalfBlend(Event_MagicLaunchLeft, blend_type);
+							--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecEventHalfBlend(Event_MagicLaunchLeft)", magic_index);
+						end
+						
+						act(SetIsMagicInUse, TRUE);
+						act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+						SetAIActionState();
 						return true;
 					end
-					
-					local useRightHand = ShouldUseRightHand(magic_index);
-					if (useRightHand) then
-						magic_hand = HAND_RIGHT;
-					end
-					
-					if ExecComboMagic(magic_hand, blend_type, lastMagicMem, magic_index) == TRUE then
-						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecComboMagic", magic_index);
-					elseif ExecQuickMagic(magic_hand, quick_type, blend_type) == TRUE then
-						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecQuickMagic", magic_index);
-					elseif ExecStealthMagic(magic_hand, magic_index, blend_type) == TRUE then
-						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecStealthMagic", magic_index);
-					elseif (useRightHand) then
-						ExecEventHalfBlend(Event_MagicLaunchRight, blend_type)
-						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecEventHalfBlend(Event_MagicLaunchRight)", magic_index);
-					else
-						ExecEventHalfBlend(Event_MagicLaunchLeft, blend_type)
-						--this:DebugOutput("[ExecMagicTranslation] magic_index = %s is ExecEventHalfBlend(Event_MagicLaunchLeft)", magic_index);
-					end
-					
-					act(SetIsMagicInUse, TRUE)
-					act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID))
-					SetAIActionState();
-					return true;
 				else
-					return false, 2;
+					return false, MagicTranslationStatus.InvalidCatalyst;
 				end
-				return false;
 			end,
 			
 			-- Controls the access to env(IsSpecialTransitionPossible) inside ExecAttack
@@ -25629,6 +25848,14 @@ function JumpCommonFunction(jump_type)
 end
 
 function ExecJumpMagic(jump_type)
+	local guardStanceMoveset = GuardStanceMoveset();
+	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable(GuardStanceActionContext.OnJumpMagic);
+	if (specialAction and guardStanceMoveset:ReadActionInputOnEvent(specialAction, GuardStanceActionKind.TransformWeaponLeft, GuardStanceActionMod.EventAction)) then
+		if (guardStanceMoveset:TranslateActionOnJumpMagic(specialAction, jump_type)) then
+			return TRUE;
+		end
+	end
+	
     if c_HasActionRequest == FALSE then
         return FALSE
     end
@@ -26222,7 +26449,7 @@ function Jump_Loop_onUpdate()
         if landIndex > 0 then
             ResetRequest()
         end
-
+		
         if JUMP_STATE_1 == 1 then
             ExecEventNoReset("W_Jump_Land_N")
         elseif JUMP_STATE_2 == 1 then
@@ -26248,7 +26475,7 @@ end
 function Jump_LandAttack_Normal_onUpdate()
     SetAIActionState()
 	
-	local action = GuardStanceMoveset():TranslateActionOnJump(GuardStanceOnUpdate.AttackLightJump,
+	local action = GuardStanceMoveset():TranslateActionOnJumpAttack(GuardStanceOnUpdate.AttackLightJump,
 	{
 		R2 = "W_AttackRightHeavy1Start",
 		B2 = "W_AttackBothHeavy1Start"
@@ -26273,7 +26500,7 @@ end
 function Jump_LandAttack_Hard_onUpdate()
     SetAIActionState()
 	
-	local action = GuardStanceMoveset():TranslateActionOnJump(GuardStanceOnUpdate.AttackHeavyJump,
+	local action = GuardStanceMoveset():TranslateActionOnJumpAttack(GuardStanceOnUpdate.AttackHeavyJump,
 	{
 		R2 = "W_AttackRightHeavy1Start",
 		B2 = "W_AttackBothHeavy1Start"
@@ -26322,7 +26549,7 @@ function JumpLandCommonFunction()
 			end
 			
 			if (kind) then
-				local action = guardStanceMoveset:TranslateActionOnJump(kind,
+				local action = guardStanceMoveset:TranslateActionOnJumpAttack(kind,
 				{
 					R1 = r1,
 					R2 = r2,
