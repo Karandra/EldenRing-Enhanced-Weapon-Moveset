@@ -73,6 +73,16 @@ function GetActiveAttackHand()
 		return style;
     end
 end
+function GetWeaponCategory(hand)
+	if (not hand) then
+		hand = GetActiveAttackHand();
+	end
+	
+	if hand then
+		return env(GetEquipWeaponCategory, hand);
+	end
+	return nil;
+end
 function GetMovesetOverride(hand)
 	if (not hand) then
 		hand = GetActiveAttackHand();
@@ -81,9 +91,23 @@ function GetMovesetOverride(hand)
 	if hand then
 		return env(GetEquipWeaponSpecialCategoryNumber, hand);
 	end
+	return nil;
 end
 
 -- Enums
+local WeaponMovesetCategory =
+{
+	Greatsword = WEAPON_CATEGORY_LARGE_SWORD,
+	LightGreatsword = WEAPON_CATEGORY_LIGHT_LARGE_SWORD
+};
+local WeaponMovesetOverride =
+{
+	None = 0,
+	
+	KnightGreatsword = 128, -- Knight's Greatsword, Banished Knight's Greatsword, Inseparable Greatsword
+	RellanaTwinBlades = 249 -- Rellana's Twin Blades
+};
+
 local WeaponMovesetActionKind =
 {
 	None = 0,
@@ -249,11 +273,13 @@ function WeaponMovesetController(hand)
 			-- Parameters:
 				-- int movesetOverride: moveset override number
 			-- Returns: bool
-			IsAvailableOnWeapon = function(this, movesetOverride)
-				-- Add any other override ids here
-				-- 128: Knight's Greatsword, Banished Knight's Greatsword, Inseparable Greatsword
-				
-				return movesetOverride == 128;
+			IsAvailableOnWeapon = function(this, weaponCategory, movesetOverride)
+				if (weaponCategory == WeaponMovesetCategory.Greatsword) then
+					return movesetOverride == WeaponMovesetOverride.KnightGreatsword;
+				--elseif (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
+					--return movesetOverride ~= WeaponMovesetOverride.RellanaTwinBlades;
+				end
+				return false;
 			end,
 			
 			-- Checks if the currently used weapon is held with both hands
@@ -526,6 +552,7 @@ function WeaponMovesetController(hand)
 			WeaponMovesetController = function(this, hand)
 				local movesetOverride = nil;
 				if (not hand or hand ~= -1) then
+					this.WeaponCategory = GetWeaponCategory(hand);
 					this.MovesetOverride = GetMovesetOverride(hand);
 				elseif (hand == -1) then
 					this.SpecialAction = WeaponMoveset_SpecialAction(WeaponMovesetActionContext.Global);
@@ -539,6 +566,7 @@ function WeaponMovesetController(hand)
 				-- int hand: the hand to check weapon for, if nil the active hand is used
 			-- Returns: this&
 			Refresh = function(this, hand)
+				this.WeaponCategory = GetWeaponCategory(hand);
 				this.MovesetOverride = GetMovesetOverride(hand);
 				
 				return this;
@@ -548,7 +576,7 @@ function WeaponMovesetController(hand)
 			--
 			-- Returns: bool
 			IsAvailable = function(this)
-				return this:IsAvailableOnWeapon(this.MovesetOverride);
+				return this:IsAvailableOnWeapon(this.WeaponCategory, this.MovesetOverride);
 			end,
 			
 			-- Reads input for the provided action. Supposed to be used to detect input on your own when
@@ -757,6 +785,8 @@ function WeaponMovesetController(hand)
 				
 				local comboResetCheck = true;
 				local setSpecialInterpolation = false;
+				local weaponCategory = this.WeaponCategory;
+				local movesetOverride = this.MovesetOverride;
 				
 				-- 1h Light Right
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackRightLight1) then
@@ -766,8 +796,10 @@ function WeaponMovesetController(hand)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackRightLight3) then
 					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
-					if (this:IsLightAttackLoopEnabled()) then
-						action.R1 = "W_AttackRightLight2";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (this:IsLightAttackLoopEnabled()) then
+							action.R1 = "W_AttackRightLight2";
+						end
 					end
 				end
 				
@@ -779,8 +811,10 @@ function WeaponMovesetController(hand)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLeftHeavy3) then
 					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
-					if (this:IsLightAttackLoopEnabled()) then
-						action.L2 = "W_AttackLeftHeavy2";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (this:IsLightAttackLoopEnabled()) then
+							action.L2 = "W_AttackLeftHeavy2";
+						end
 					end
 				end
 				
@@ -788,79 +822,133 @@ function WeaponMovesetController(hand)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight1) then
 					g_WeaponMovesetController:AttackChain_OnAttack(1);
 					
-					action.B2 = "W_AttackBothGuardSpecial3";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy2Start";
+						else
+							action.B2 = "W_AttackBothGuardSpecial3";
+						end
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight2) then
 					g_WeaponMovesetController:AttackChain_OnAttack(2);
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight3) then
 					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
-					if (this:IsLightAttackLoopEnabled()) then
-						action.B1 = "W_AttackBothLight2";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (this:IsLightAttackLoopEnabled()) then
+							action.B1 = "W_AttackBothLight2";
+						end
+						if (this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy2Start";
+						else
+							action.B2 = "W_AttackBothHeavy1aStart";
+						end
 					end
-					action.B2 = "W_AttackBothHeavy1aStart";
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight4) then
 					g_WeaponMovesetController:AttackChain_OnAttack(4);
 					
-					-- While we have R1(3) -> R1(2) looping setup, if we somehow got to R1(4)
-					-- make it loop back to R1(3) and set a matching heavy so it all looks nice.
-					if (this:IsLightAttackLoopEnabled()) then
-						action.B1 = "W_AttackBothLight3";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						-- While we have R1(3) -> R1(2) looping setup, if we somehow got to R1(4)
+						-- make it loop back to R1(3) and set a matching heavy so it all looks nice.
+						if (this:IsLightAttackLoopEnabled()) then
+							action.B1 = "W_AttackBothLight3";
+						end
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy2aStart";
+						end
 					end
-					action.B2 = "W_AttackBothHeavy2aStart";
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight5) then
 					g_WeaponMovesetController:AttackChain_OnAttack(5);
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothDash) then
-					action.B2 = "W_AttackBothHeavy1aStart";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy2Start";
+						else
+							action.B2 = "W_AttackBothHeavy1aStart";
+						end
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothBackstep) then
-					action.B2 = "W_AttackBothHeavy2Start";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B2 = "W_AttackBothHeavy2Start";
+					end
 				end
 				
 				-- 2h Guard Counter
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardCounter or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavyGuardCounter) then
 					comboResetCheck = false;
-					action.B2 = "W_AttackBothHeavy1aStart";
+					
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy1aStart";
+						end
+					end
 				end
 				
 				-- 2h Heavy
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2Start) then
-					action.B1 = "W_AttackBothLight3";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothLight3";
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2End) then
-					action.B1 = "W_AttackBothLight3";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothLight3";
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavyDash) then
-					action.B1 = "W_AttackBothLight3";
-					action.B2 = "W_AttackBothHeavy1bStart";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothLight3";
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy1bStart";
+						end
+					end
 				end
 				
 				-- 2h Heavy A
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1aStart) then
 					setSpecialInterpolation = true;
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2aStart) then
-					action.B1 = "W_AttackBothLight2";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothLight2";
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2aEnd) then
-					action.B1 = "W_AttackBothLight2";
-					action.B2 = "W_AttackBothGuardSpecial2";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothLight2";
+						action.B2 = "W_AttackBothGuardSpecial2";
+					end
 				end
 				
 				-- 2h Heavy B
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1bStart) then
 					setSpecialInterpolation = true;
-					action.B2 = "W_AttackBothHeavy1aStart";
+					
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B2 = "W_AttackBothHeavy1aStart";
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bStart) then
-					action.B1 = "W_AttackBothLight3";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothLight3";
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bEnd) then
-					action.B1 = "W_AttackBothLight3";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothLight3";
+					end
 				end
 				
 				-- 2h Guard Special
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardSpecial1) then
-					action.B1 = "W_AttackBothGuardSpecial3";
-					action.B2 = "W_AttackBothHeavy1bStart";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothGuardSpecial3";
+						action.B2 = "W_AttackBothHeavy1bStart";
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardSpecial2) then
-					action.B1 = "W_AttackBothLight3";
-					action.B2 = "W_AttackBothGuardSpecial3";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothLight3";
+						action.B2 = "W_AttackBothGuardSpecial3";
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardSpecial3) then
-					action.B1 = "W_AttackBothHeavy1bStart";
-					action.B2 = "W_AttackBothGuardSpecial2";
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.B1 = "W_AttackBothHeavy1bStart";
+						action.B2 = "W_AttackBothGuardSpecial2";
+					end
 				end
 				
 				-- Reset the light attack combo if allowd (using g_ComboReset)
@@ -887,18 +975,31 @@ function WeaponMovesetController(hand)
 			-- Called from 'GuardCommonFunction' and 'DamageCommonFunction' functions.
 			--
 			-- Parameters:
+				-- struct Action&
 				-- const class SpecialAction& 
 			-- Returns: struct Action
-			TranslateActionOnGuard = function(this, specialAction)
+			TranslateActionOnGuard = function(this, action, specialAction)
 				--this:DebugOutput("[TranslateActionOnGuard] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
+				if (not this:IsAvailable()) then
+					return action;
+				end
 				
-				local attackRequest = nil;
-				local actionContext = WeaponMovesetActionContext.OnGuard;
-				local b1 = "W_AttackBothLight2";
-				local b2 = "W_AttackBothHeavy1aStart";
+				local weaponCategory = this.WeaponCategory;
+				local movesetOverride = this.MovesetOverride;
+				if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+					action.B1 = "W_AttackBothLight2";
+					if (this:IsNetworkCompatibilityEnabled()) then
+						action.B2 = "W_AttackBothHeavy2Start";
+					else
+						action.B2 = "W_AttackBothHeavy1aStart";
+					end
+				elseif (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
+					action.B1 = "W_AttackBothLight3";
+					action.B2 = "W_AttackBothHeavy2Start";
+				end
 				
 				if (specialAction) then
-					actionContext = specialAction.ActionContext;
+					action.ActionContext = specialAction.ActionContext;
 					local actionKind = specialAction.ActionKind;
 					local actionMod = specialAction.ActionMod;
 					
@@ -907,22 +1008,25 @@ function WeaponMovesetController(hand)
 						-- is going to ignore the call. Supported by ExecAttack2 variant only.
 						
 						if (actionKind == WeaponMovesetActionKind.Jump) then
-							attackRequest = ATTACK_REQUEST_BOTH_LIGHT;
-							b1 = "W_AttackBothGuardSpecial1";
+							action.Request = ATTACK_REQUEST_BOTH_LIGHT;
+							action.B1 = "W_AttackBothGuardSpecial1";
 						elseif (actionKind == WeaponMovesetActionKind.UseItem) then
-							attackRequest = ATTACK_REQUEST_BOTH_HEAVY;
-							b2 = "W_AttackBothGuardSpecial2";
+							action.Request = ATTACK_REQUEST_BOTH_HEAVY;
+							action.B2 = "W_AttackBothGuardSpecial2";
 						elseif (actionKind == WeaponMovesetActionKind.EventAction) then
-							attackRequest = ATTACK_REQUEST_BOTH_HEAVY;
-							b2 = "W_AttackBothGuardSpecial3";
+							action.Request = ATTACK_REQUEST_BOTH_HEAVY;
+							action.B2 = "W_AttackBothGuardSpecial3";
 						elseif (actionKind == WeaponMovesetActionKind.Stealth) then
-							attackRequest = ATTACK_REQUEST_BOTH_HEAVY;
-							b2 = "W_AttackBothHeavy1bStart";
+							action.Request = ATTACK_REQUEST_BOTH_HEAVY;
+							action.B2 = "W_AttackBothHeavy1bStart";
 						end
 					end
 				end
 				
-				return {Request = attackRequest, ActionContext = actionContext, B1 = b1, B2 = b2};
+				if (not action.ActionContext) then
+					action.ActionContext = WeaponMovesetActionContext.OnGuard;
+				end
+				return action;
 			end,
 			
 			-- Translate the animation events for jump attacks. This functions controls the follow-up attacks after the actual
@@ -937,15 +1041,31 @@ function WeaponMovesetController(hand)
 				if (not this:IsAvailable()) then
 					return action;
 				end
-			
+				
+				local weaponCategory = this.WeaponCategory;
+				local movesetOverride = this.MovesetOverride;
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLightJump) then
-					action.R2 = "W_AttackRightHeavy2Start";
-					action.B2 = "W_AttackBothHeavy2bStart";
-					g_ComboReset = FALSE;
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.R2 = "W_AttackRightHeavy2Start";
+						if (this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy2Start";
+						else
+							action.B2 = "W_AttackBothHeavy2bStart";
+						end
+						
+						g_ComboReset = FALSE;
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackHeavyJump or onUpdateKind == WeaponMovesetOnUpdateKind.AttackDualJump) then
-					action.R2 = "W_AttackRightHeavy2Start";
-					action.B2 = "W_AttackBothHeavy1aStart";
-					g_ComboReset = FALSE;
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						action.R2 = "W_AttackRightHeavy2Start";
+						if (this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy2Start";
+						else
+							action.B2 = "W_AttackBothHeavy1aStart";
+						end
+						
+						g_ComboReset = FALSE;
+					end
 				end
 				
 				return action;
@@ -996,17 +1116,21 @@ function WeaponMovesetController(hand)
 						return nil;
 					end
 					
-					if (action.R1) then
-						local eventName = MakeEvent("W_AttackRightLight", nextIndex);
-						if (eventName) then
-							action.R1 = eventName;
+					local weaponCategory = this.WeaponCategory;
+					local movesetOverride = this.MovesetOverride;
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (action.R1) then
+							local eventName = MakeEvent("W_AttackRightLight", nextIndex);
+							if (eventName) then
+								action.R1 = eventName;
+							end
 						end
-					end
 					
-					if (action.B1) then
-						local eventName = MakeEvent("W_AttackBothLight", nextIndex);
-						if (eventName) then
-							action.B1 = eventName;
+						if (action.B1) then
+							local eventName = MakeEvent("W_AttackBothLight", nextIndex);
+							if (eventName) then
+								action.B1 = eventName;
+							end
 						end
 					end
 				end
@@ -1535,6 +1659,20 @@ function WeaponMovesetController(hand)
 				return this:IsAvailable() and this:IsTwoHanding();
 			end,
 			
+			-- Returns true if the moveset should be network-compatible. Network compatibility means that only the
+			-- functions that can work properly, even if the other person during online play doesn't have the mod
+			-- installed, are enabled. This usually means no new animations or anything that uses new AtkParam rows.
+			-- Returns: bool
+			IsNetworkCompatibilityEnabled = function(this)
+				if (this:IsAvailable()) then	
+					-- Change this to true to enable only network-compatible actions
+					return false;
+				end
+				
+				-- If moveset isn't available, the network compatibility is assumed enabled
+				return true;
+			end,
+			
 			-- Tests if the action can be invoked in the given context
 			--
 			-- Parameters:
@@ -1545,27 +1683,38 @@ function WeaponMovesetController(hand)
 				--this:DebugOutput("[CanInvokeAction] actionKind: %s, actionContext = %s", actionKind, actionContext);
 				
 				if (actionKind and actionKind > WeaponMovesetActionKind.None and actionKind < WeaponMovesetActionKind.MAX) then
-					if (actionContext == WeaponMovesetActionContext.OnGuard) then
-						return this:AnyOf(
-						{
-							WeaponMovesetActionKind.Jump,
-							WeaponMovesetActionKind.Stealth,
-							WeaponMovesetActionKind.UseItem,
-							WeaponMovesetActionKind.EventAction
-						}, actionKind);
-					elseif (actionContext == WeaponMovesetActionContext.OnGuardEnd) then
-						return this:AnyOf(
-						{
-							WeaponMovesetActionKind.UseItem,
-							WeaponMovesetActionKind.EventAction,
-							WeaponMovesetActionKind.SwitchWeaponRight
-						}, actionKind);
-					elseif (actionContext == WeaponMovesetActionContext.Global) then
-						if (this:IsMagicTranslationAllowed()) then
-							return this:AnyOf(
-							{
-								WeaponMovesetActionKind.TransformWeaponLeft
-							}, actionKind);
+					local weaponCategory = this.WeaponCategory;
+					local movesetOverride = this.MovesetOverride;
+					
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (this:IsNetworkCompatibilityEnabled()) then
+							if (actionContext == WeaponMovesetActionContext.Global) then
+								return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
+							end
+						else
+							if (actionContext == WeaponMovesetActionContext.OnGuard) then
+								return this:AnyOf(
+								{
+									WeaponMovesetActionKind.Jump,
+									WeaponMovesetActionKind.Stealth,
+									WeaponMovesetActionKind.UseItem,
+									WeaponMovesetActionKind.EventAction
+								}, actionKind);
+							elseif (actionContext == WeaponMovesetActionContext.OnGuardEnd) then
+								return this:AnyOf(
+								{
+									WeaponMovesetActionKind.UseItem,
+									WeaponMovesetActionKind.EventAction,
+								}, actionKind);
+							elseif (actionContext == WeaponMovesetActionContext.Global) then
+								if (this:IsMagicTranslationEnabled()) then
+									return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
+								end
+							end
+						end
+					elseif (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
+						if (actionContext == WeaponMovesetActionContext.Global) then
+							return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
 						end
 					end
 				end
@@ -1628,7 +1777,7 @@ function WeaponMovesetController(hand)
 				-- int hand: hand the weapon is held in
 			-- Returns: int, 0 if no attacks available, -1 if the result is invalid and should be ignored
 			GetLightAttackCount = function(this, hand)
-				if (this.MovesetOverride == 128) then
+				if (this.MovesetOverride == WeaponMovesetOverride.KnightGreatsword) then
 					return 3;
 				else
 					return GetAttackMaxNumber(hand);
@@ -8835,11 +8984,15 @@ function DamageCommonFunction(guardcondition, estep, fall_type)
     end
 	
 	if (guardcondition == TO_GUARDON and weaponMovesetController:Refresh():IsAvailable()) then
-		local action = weaponMovesetController:TranslateActionOnGuard(specialAction);
-		action.R1 = "W_AttackRightLight1";
-		action.R2 = "W_AttackRightHeavy1Start";
-		action.L1 = "W_AttackLeftLight1";
-		action.L2 = "W_AttackLeftHeavy1";
+		local action = weaponMovesetController:TranslateActionOnGuard(
+		{
+			R1 = "W_AttackRightLight1",
+			R2 = "W_AttackRightHeavy1Start",
+			L1 = "W_AttackLeftLight1",
+			L2 = "W_AttackLeftHeavy1",
+			B1 = "W_AttackBothLight1",
+			B1 = "W_AttackBothHeavy1Start"
+		}, specialAction);
 		
 		if (weaponMovesetController:ExecAttack(action, ALLBODY, FALSE, FALSE, FALSE)) then
 			ResetDamageCount();
@@ -9366,11 +9519,15 @@ function GuardCommonFunction(is_guard_end, blend_type, is_just_guard)
         end
 		
 		if (weaponMovesetController:Refresh():IsAvailable()) then
-			local action = weaponMovesetController:TranslateActionOnGuard(specialAction);
-			action.R1 = "W_AttackRightLight1";
-			action.R2 = "W_AttackRightHeavy1Start";
-			action.L1 = nil;
-			action.L2 = "W_AttackLeftHeavy1";
+			local action = weaponMovesetController:TranslateActionOnGuard(
+			{
+				R1 = "W_AttackRightLight1",
+				R2 = "W_AttackRightHeavy1Start",
+				L1 = nil,
+				L2 = "W_AttackLeftHeavy1",
+				B1 = "W_AttackBothLight1",
+				B1 = "W_AttackBothHeavy1Start"
+			}, specialAction);
 			
 			if (weaponMovesetController:ExecAttack(action, blend_type, FALSE, FALSE, FALSE)) then
 				return TRUE;
