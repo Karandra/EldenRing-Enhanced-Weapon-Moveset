@@ -278,9 +278,7 @@ function WeaponMovesetController(hand)
 			
 			-- Queries the table by key if the table is not nil
 			--
-			-- Parameters:
-				-- table
-				-- any
+			-- Parameters: table, any
 			-- Returns: any, nil if no such key present
 			QueryTable = function(this, t, key)
 				if (type(t) == "table") then
@@ -379,7 +377,7 @@ function WeaponMovesetController(hand)
 			OnUpdate = function(this)
 				-- Guard cooldown
 				if (not this.GuardTimer) then
-					this.GuardTimer = GetDeltaTime();
+					this.GuardTimer = 0;
 				else
 					this.GuardTimer = this.GuardTimer + GetDeltaTime();
 				end
@@ -395,10 +393,10 @@ function WeaponMovesetController(hand)
 				end
 				
 				-- Reset the global modifier if it's invalid
-				if (g_WeaponMovesetController.SpecialAction.ActionMod) then
-					local command = this:TranslateActionCommand(g_WeaponMovesetController.SpecialAction.ActionMod);
+				if (this.SpecialAction.ActionMod) then
+					local command = this:TranslateActionCommand(this.SpecialAction.ActionMod);
 					if (command and (env(ActionCancelRequest, command) == TRUE or env(ActionDuration, command) <= 0)) then
-						g_WeaponMovesetController.SpecialAction:SetMod(nil);
+						this.SpecialAction:SetMod(nil);
 					end
 				end
 			end,
@@ -406,30 +404,28 @@ function WeaponMovesetController(hand)
 			-- Handles the guard timeout, called from 'ExecGuard' function
 			--
 			-- Returns: bool, true if ExecGuard is allowed to continue, false otherwise
-			OnExecGuard = function(this, movesetOverride, event)
-				if (this:IsAvailableOnWeapon(movesetOverride)) then
-					-- It appears so, in Elden Ring, the insufficient stamina doesn't make the chracter
-					-- to jitter constantly entering and dropping the guard, unlike how it was in DS3,
-					-- making the stamina check unnecessary.
-					
-					-- Allow to guard not often than every 0.7 seconds. This time factors in the guard
-					-- start animation, so it must be long enough to disallow spamming, but short enough
-					-- to not look janky.
-					--
-					-- The same can be implemented in ExecGuard using 'Event_GuardStart_JustGuard' event
-					-- exclusive to deflection tear, but its cooldown is much longer so we're using a
-					-- custom method instead.
-					if (this.GuardTimer and this.GuardTimer < 0.7) then
-						return false;
-					else
-						this.GuardTimer = nil;
-					end
-					
-					-- TODO: handle deflection tear
-					--if (env(GetSpEffectID, 102000) == TRUE) then
-						
-					--end
+			OnExecGuard = function(this, event)
+				-- It appears so, in Elden Ring, the insufficient stamina doesn't make the chracter
+				-- to jitter constantly entering and dropping the guard, unlike how it is in DS3,
+				-- making the stamina check unnecessary.
+				
+				-- Allow to guard not often than every 0.7 seconds. This time factors in the guard
+				-- start animation, so it must be long enough to disallow spamming, but short enough
+				-- to not look janky.
+				--
+				-- The same can be implemented in ExecGuard using 'Event_GuardStart_JustGuard' event
+				-- exclusive to deflection tear, but its cooldown is much longer so we're using a
+				-- custom method instead.
+				if (g_WeaponMovesetController.GuardTimer and g_WeaponMovesetController.GuardTimer < 0.7) then
+					return false;
+				else
+					g_WeaponMovesetController.GuardTimer = nil;
 				end
+				
+				-- TODO: handle deflection tear
+				--if (env(GetSpEffectID, 102000) == TRUE) then
+					
+				--end
 				return true;
 			end,
 			
@@ -471,6 +467,19 @@ function WeaponMovesetController(hand)
 				end
 			end,
 			
+			-- Handles the evasion completion, called from 'ExecEvasion'.
+			--
+			-- Returns: void
+			OnEvasionExecuted = function(this)
+				if (g_WeaponMovesetController.ChainAttackAllowed) then
+					g_WeaponMovesetController.EvasionCount = this.EvasionCount + 1;
+					
+					if (g_WeaponMovesetController.EvasionCount > 1) then
+						g_WeaponMovesetController:AttackChain_Reset();
+					end
+				end
+			end,
+			
 			-- Functions that handle the attack chain persisting through a dodge
 			AttackChain_OnAttack = function(this, index)
 				this.ChainAttackAllowed = true;
@@ -483,7 +492,7 @@ function WeaponMovesetController(hand)
 				--this:DebugOutput("[AttackChain_SelectNext] ChainAttackAllowed: %s, ChainAttackIndex = %s, ChainAttackTimer = %s", this.ChainAttackAllowed, this.ChainAttackIndex, this.ChainAttackTimer);
 				
 				if (this.ChainAttackTimer and this.ChainAttackTimer >= 1.0) then
-					this:ResetActionOnEvasion();
+					this:AttackChain_Reset();
 					return nil;
 				end
 				
@@ -507,7 +516,12 @@ function WeaponMovesetController(hand)
 				end
 				return nil;
 			end,
-		
+			AttackChain_Reset = function(this)
+				g_WeaponMovesetController.EvasionCount = 0;
+				g_WeaponMovesetController.ChainAttackIndex = 0;
+				g_WeaponMovesetController.ChainAttackAllowed = false;
+			end,
+			
 		-- public:
 			WeaponMovesetController = function(this, hand)
 				local movesetOverride = nil;
@@ -610,7 +624,10 @@ function WeaponMovesetController(hand)
 				if (not this:IsAvailable() or (not actionKind and not actionMod)) then
 					return false;
 				end
+				-- Try to use ReadActionInputOnEvent instead?
 				
+				-- The extra condition function provided by the caller. The result is cached.
+				-- If none is provided, assuming true.
 				local extraConditionResult = nil;
 				local function CheckExtraCondition()
 					if (extraConditionResult ~= nil) then
@@ -622,7 +639,7 @@ function WeaponMovesetController(hand)
 						return true;
 					end
 				end
-			
+				
 				local resultKind = false;
 				local resultMod = false;
 				local command = this:TranslateActionCommand(actionKind);
@@ -677,7 +694,7 @@ function WeaponMovesetController(hand)
 								local specialAction = g_WeaponMovesetController.SpecialAction:Clone();
 								specialAction.ActionKind = actionKind;
 								
-								if (this:TranslateActionOnGlobal(specialAction)) then
+								if (this:ExecuteActionOnGlobal(specialAction)) then
 									return true;
 								end
 							end
@@ -688,25 +705,25 @@ function WeaponMovesetController(hand)
 				return resultKind, resultMod;
 			end,
 			
-			-- Translate the special action from global state. The translation isn't done into action data,
-			-- the function will have to execute the attack itself.
+			-- Execute a special action from the global state. No translation into action data is done, the function executes
+			-- the action itself.
 			-- Called from various 'Exec*' and '*CommonFunction' functions.
 			--
 			-- Parameters:
 				-- const class SpecialAction& 
 			-- Returns: bool, true if we handled the event, false otherwise
-			TranslateActionOnGlobal = function(this, specialAction)
-				--this:DebugOutput("[TranslateActionOnGlobal] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
+			ExecuteActionOnGlobal = function(this, specialAction)
+				--this:DebugOutput("[ExecuteActionOnGlobal] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
 				
 				-- We always have special action here
 				local actionKind = specialAction.ActionKind;
 				local actionMod = specialAction.ActionMod;
 				
-				if (this:IsMagicTranslationAllowed()) then
+				if (this:IsMagicTranslationEnabled()) then
 					if (actionMod == WeaponMovesetActionMod.EventAction and actionKind == WeaponMovesetActionKind.TransformWeaponLeft) then
-						-- In general, any result of ExecMagic is a reason to interrupt any event that called us, since we don't want
-						-- things like being out of stamina to play the usual action. The only way that should happen if the opposite
-						-- hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
+						-- In general, any result of ExecMagicTranslation is a reason to interrupt any event that called us, since we don't want
+						-- things like being out of stamina to play the usual action. The only way that should happen if we aren't two-handing or
+						-- the opposite hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
 						-- casting action available.
 						
 						local MagicTranslationStatus = this.MagicTranslationStatus;
@@ -790,6 +807,8 @@ function WeaponMovesetController(hand)
 						action.B1 = "W_AttackBothLight3";
 					end
 					action.B2 = "W_AttackBothHeavy2aStart";
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight5) then
+					g_WeaponMovesetController:AttackChain_OnAttack(5);
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothDash) then
 					action.B2 = "W_AttackBothHeavy1aStart";
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothBackstep) then
@@ -906,8 +925,9 @@ function WeaponMovesetController(hand)
 				return {Request = attackRequest, ActionContext = actionContext, B1 = b1, B2 = b2};
 			end,
 			
-			-- Translate the animation events for 'JumpLandCommonFunction' function. Same idea
-			-- as for 'TranslateActionOnUpdate'.
+			-- Translate the animation events for jump attacks. This functions controls the follow-up attacks after the actual
+			-- jump attack is done.
+			-- Called from 'JumpLandCommonFunction' function.
 			--
 			-- Parameters:
 				-- enum WeaponMovesetOnUpdateKind
@@ -931,17 +951,19 @@ function WeaponMovesetController(hand)
 				return action;
 			end,
 			
-			-- Translate the special action and a jump type into jump magic attack action.
-			-- Called from 'JumpCommonFunction' and 'Jump_Loop_onUpdate' functions.
+			-- Translate the special action and a jump type into jump magic attack action. Jump magic attacks are a little different
+			-- from normal attacks, because we're changing the actual jump attack, so the translation isnt done into action data,
+			-- but excutes its own action.
+			-- Called from 'ExecJumpMagic' (which in turn is called from 'JumpCommonFunction' and 'Jump_Loop_onUpdate' functions).
 			--
 			-- Parameters:
-				-- const class SpecialAction& 
 				-- int jump_type: 0 = W_JumpAttack_Start_Falling, 1 = W_JumpAttack_Start_Falling_F, 2 = W_JumpAttack_Start_Falling_D
+				-- const class SpecialAction& 
 			-- Returns: bool, true if we handled the event, false otherwise
-			TranslateActionOnJumpMagic = function(this, specialAction, jump_type)
+			TranslateActionOnJumpMagic = function(this, jump_type, specialAction)
 				--this:DebugOutput("[TranslateActionOnJumpMagic] specialAction = %s, jump_type = %s", tostring(specialAction), tostring(jump_type));
 				
-				if (this:IsMagicTranslationAllowed()) then
+				if (this:IsMagicTranslationEnabled()) then
 					if (specialAction) then
 						local actionKind = specialAction.ActionKind;
 						local actionMod = specialAction.ActionMod;
@@ -954,7 +976,9 @@ function WeaponMovesetController(hand)
 				return false;
 			end,
 			
-			-- Translate the animation events for dodge attack chain (called from 'ExecAttack')
+			-- Translate the animation events for dodge attack chain.
+			-- Called from 'ExecAttack' and not from 'ExecEvasion' since it's too early to call it in 'ExecEvasion'. Additionally
+			-- calling it from 'ExecAttack' allows us to handle more points where evasion attack can be initiated from.
 			--
 			-- Parameters:
 				-- const class WeaponMovesetController&: a referencce to the actual instance of WeaponMovesetController and not the global one
@@ -986,39 +1010,19 @@ function WeaponMovesetController(hand)
 						end
 					end
 				end
+				this:AttackChain_Reset();
+				
 				return action;
-			end,
-			
-			-- Reset the stored attack chain data for dodge attack chain (called from 'ExecAttack')
-			--
-			-- Returns: void
-			ResetActionOnEvasion = function(this)
-				g_WeaponMovesetController.EvasionCount = 0;
-				g_WeaponMovesetController.ChainAttackIndex = 0;
-				g_WeaponMovesetController.ChainAttackAllowed = false;
-			end,
-			
-			-- Handles the evasion counter for dodge attack chain (called from 'ExecEvasion')
-			--
-			-- Returns: void
-			ProcessActionOnEvasionFinished = function(this)
-				if (g_WeaponMovesetController.ChainAttackAllowed) then
-					g_WeaponMovesetController.EvasionCount = this.EvasionCount + 1;
-					
-					if (g_WeaponMovesetController.EvasionCount > 1) then
-						g_WeaponMovesetController:ResetActionOnEvasion();
-					end
-				end
 			end,
 			
 			-- Common function to handle charge attack transitions for heavy attack chains
 			--
 			-- Parameters:
 				-- enum WeaponMovesetOnUpdateKind: 'HeavyCharge*' only variants.
-				-- string: event name to execute
+				-- string: event name to switch to
 				-- struct Action&
 			-- Returns: void
-			ChargeTransitionOnUpdate = function(this, onUpdateKind, eventName, action)
+			HandleChargeTransition = function(this, onUpdateKind, eventName, action)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.HeavyChargeSubStart) then
 					if (env(GetEventEzStateFlag, 0) == TRUE or env(IsAnimEnd, 1) == TRUE) then
 						act(SetSpecialInterpolation, 0, TRUE);
@@ -1082,7 +1086,8 @@ function WeaponMovesetController(hand)
 				return ExecAttack2(action.Request, r1, r2, l1, l2, b1, b2, guardAttack, ...) == TRUE;
 			end,
 			
-			-- Executes the magic cast event using a valid spell catalyst in the opposite hand.
+			-- Executes the magic cast event using a valid spell catalyst in the opposite hand. Also supports executing the jump magic
+			-- if jump_type is provided.
 			--
 			-- Parameters:
 				-- int quick_type: one of the QUICKTYPE_* (or MagicTranslationQuickType) values. Will be requested from hkb if nil.
@@ -1505,11 +1510,29 @@ function WeaponMovesetController(hand)
 				end
 			end,
 			
-			-- Controls the access to env(IsSpecialTransitionPossible) inside ExecAttack
+			-- Controls the access to env(IsSpecialTransitionPossible) inside ExecAttack.
 			--
 			-- Returns: bool
-			SpecialTransitionEnabled = function(this)
+			IsSpecialTransitionAllowed = function(this)
 				return not this:IsAvailable();
+			end,
+			
+			-- Returns true if the moveset should loop R1(3) back into R1(2) instead of allowing it to
+			-- advance to R1(4) and end there.
+			--
+			-- Returns: bool
+			IsLightAttackLoopEnabled = function(this)
+				if (this.MovesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+					return true;
+				else
+					return false;
+				end
+			end,
+			
+			-- Returns true if the weapon is allowed to cast spells from the opposite hand catalyst
+			-- Returns: bool
+			IsMagicTranslationEnabled = function(this)
+				return this:IsAvailable() and this:IsTwoHanding();
 			end,
 			
 			-- Tests if the action can be invoked in the given context
@@ -1547,12 +1570,6 @@ function WeaponMovesetController(hand)
 					end
 				end
 				return false;
-			end,
-			
-			-- Returns true if the weapon is allowed to cast spells from the opposite hand catalyst
-			-- Returns: bool
-			IsMagicTranslationAllowed = function(this)
-				return this:IsAvailable() and this:IsTwoHanding();
 			end,
 			
 			-- Translate the action kind to its corresponding input command
@@ -1605,22 +1622,10 @@ function WeaponMovesetController(hand)
 				return nil;
 			end,
 			
-			-- Returns true if the moveset should loop R1(3) back into R1(2) instead of allowing it to
-			-- advance to R1(4) and end there.
-			--
-			-- Returns: bool
-			IsLightAttackLoopEnabled = function(this)
-				if (this.MovesetOverride == 128) then
-					return true;
-				else
-					return false;
-				end
-			end,
-			
 			-- Returns the number of attacks in the chain
 			--
 			-- Parameters:
-				-- int hand: hand the weapon ie held in
+				-- int hand: hand the weapon is held in
 			-- Returns: int, 0 if no attacks available, -1 if the result is invalid and should be ignored
 			GetLightAttackCount = function(this, hand)
 				if (this.MovesetOverride == 128) then
@@ -1750,7 +1755,7 @@ function AttackBothHeavy1aSubStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", "W_AttackBothLight1", "W_AttackBothHeavy2aStart", FALSE, TRUE, 0) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeSubStart, "W_AttackBothHeavy1aStart");
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeSubStart, "W_AttackBothHeavy1aStart");
 end
 function AttackBothHeavy1aStart_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
@@ -1763,7 +1768,7 @@ function AttackBothHeavy1aStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy2Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy1aEnd", action);
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy1aEnd", action);
 end
 function AttackBothHeavy1aEnd_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
@@ -1776,7 +1781,7 @@ function AttackBothHeavy1aEnd_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy2Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
 end
 function AttackBothHeavy2aStart_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
@@ -1789,7 +1794,7 @@ function AttackBothHeavy2aStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy2aEnd", action);
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy2aEnd", action);
 end
 function AttackBothHeavy2aEnd_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
@@ -1802,7 +1807,7 @@ function AttackBothHeavy2aEnd_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
 end
 
 function AttackBothHeavy1bSubStart_onUpdate()
@@ -1812,7 +1817,7 @@ function AttackBothHeavy1bSubStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", "W_AttackBothLight1", "W_AttackBothHeavy2bStart", FALSE, TRUE, 0) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeSubStart, "W_AttackBothHeavy1bStart");
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeSubStart, "W_AttackBothHeavy1bStart");
 end
 function AttackBothHeavy1bStart_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
@@ -1825,7 +1830,7 @@ function AttackBothHeavy1bStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy2Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy1bEnd", action);
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy1bEnd", action);
 end
 function AttackBothHeavy1bEnd_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
@@ -1838,7 +1843,7 @@ function AttackBothHeavy1bEnd_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy2Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
 end
 function AttackBothHeavy2bStart_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
@@ -1851,7 +1856,7 @@ function AttackBothHeavy2bStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy2bEnd", action);
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy2bEnd", action);
 end
 function AttackBothHeavy2bEnd_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
@@ -1864,7 +1869,7 @@ function AttackBothHeavy2bEnd_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0) == TRUE then
         return;
     end
-	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
+	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
 end
 
 ------------------------------------------
@@ -2264,7 +2269,8 @@ function ExecGuard(event, blend_type)
                 guardindex = GUARD_STYLE_DUELINGSHIELD
             end
 			
-			if (not g_WeaponMovesetController:OnExecGuard(sp_kind, event)) then
+			local weaponMovesetController = WeaponMovesetController();
+			if (weaponMovesetController:IsAvailable() and not weaponMovesetController:OnExecGuard(event)) then
 				return FALSE;
 			end
 
@@ -3083,7 +3089,7 @@ function IsQuickMagic()
     }
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationAllowed()) then
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
 		if (magic_type == MAGIC_REQUEST_WEAPON_ENCHANT2 or Contains(magic_type_list, magic_type) == TRUE) then
 			return TRUE;
 		end
@@ -3519,7 +3525,7 @@ function ExecAttack2(request, r1, r2, l1, l2, b1, b2, is_guard, blend_type, arts
 		return FALSE;
 	end
 	
-	if (weaponMovesetController:SpecialTransitionEnabled()) then
+	if (weaponMovesetController:IsSpecialTransitionAllowed()) then
 		if env(IsSpecialTransitionPossible) == TRUE then
 			r1 = "W_AttackRightLight1"
 			l1 = "W_AttackLeftLight1"
@@ -3651,12 +3657,11 @@ function ExecAttack2(request, r1, r2, l1, l2, b1, b2, is_guard, blend_type, arts
             r1 = "W_AttackRightLight2"
         end
 		
-		if (weaponMovesetController:Refresh():IsAvailable() and b1 == "W_AttackRightLightStep") then
+		if (weaponMovesetController:Refresh():IsAvailable() and r1 == "W_AttackRightLightStep") then
 			local action = weaponMovesetController:TranslateActionOnEvasion(
 			{
 				R1 = r1
 			});
-			weaponMovesetController:ResetActionOnEvasion();
 			
 			r1 = action.R1;
 		end
@@ -3801,7 +3806,6 @@ function ExecAttack2(request, r1, r2, l1, l2, b1, b2, is_guard, blend_type, arts
 			{
 				B1 = b1
 			});
-			weaponMovesetController:ResetActionOnEvasion();
 			
 			b1 = action.B1;
 		end
@@ -6539,7 +6543,7 @@ function ExecEvasion(backstep_limit, estep, is_usechainrecover, specialAction)
         end
 
         ExecEventAllBody(rollingEvent)
-		g_WeaponMovesetController:ProcessActionOnEvasionFinished();
+		g_WeaponMovesetController:OnEvasionExecuted();
 		
     elseif request == ATTACK_REQUEST_EMERGENCYSTEP then
         if MoveStart(ALLBODY, Event_ChainRecover, FALSE) then
@@ -11620,10 +11624,10 @@ end
 
 function AttackBothLight4_onUpdate()
 	local weaponMovesetController = WeaponMovesetController();
-    if IsEnableNextAttack(4, HAND_RIGHT) == TRUE or weaponMovesetController:IsAvailable() then
+    if IsEnableNextAttack(4, HAND_RIGHT) == TRUE then
         local b1 = "W_AttackBothLight5";
 		local b2 = "W_AttackBothHeavy1SubStart";
-        if (g_ComboReset == TRUE or weaponMovesetController:GetLightAttackCount() < 5) then
+        if (g_ComboReset == TRUE) then
             b1 = "W_AttackBothLight1";
 			b2 = "W_AttackBothHeavy1Start";
         end
@@ -11638,25 +11642,43 @@ function AttackBothLight4_onUpdate()
             "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 4) == TRUE then
             return
         end
-    elseif AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackLeftLight1",
-        "W_AttackLeftHeavy1", "W_AttackBothLight1", "W_AttackBothHeavy1Start", FALSE, TRUE, 0) == TRUE then
-        return
+    else
+		local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight4,
+		{
+			B1 = "W_AttackBothLight1",
+			B2 = "W_AttackBothHeavy1Start"
+		});
+		
+		AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0);
     end
 end
 
 function AttackBothLight5_onUpdate()
+	local weaponMovesetController = WeaponMovesetController();
     if IsEnableNextAttack(5, HAND_RIGHT) == TRUE then
         local b1 = "W_AttackBothLight6"
         if g_ComboReset == TRUE then
             b1 = "W_AttackBothLight1"
         end
+		
+		local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight5,
+		{
+			B1 = b1,
+			B2 = "W_AttackBothHeavy1SubStart"
+		});
+		
         if AttackCommonFunction("W_AttackRightLight6", "W_AttackRightHeavy1Start", "W_AttackBothLeft2",
-            "W_AttackLeftHeavy1", b1, "W_AttackBothHeavy1SubStart", FALSE, TRUE, 5) == TRUE then
+            "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 5) == TRUE then
             return
         end
-    elseif AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackLeftLight1",
-        "W_AttackLeftHeavy1", "W_AttackBothLight1", "W_AttackBothHeavy1Start", FALSE, TRUE, 0) == TRUE then
-        return
+    else
+		local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight5,
+		{
+			B1 = "W_AttackBothLight1",
+			B2 = "W_AttackBothHeavy1Start"
+		});
+		
+		AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0)
     end
 end
 
@@ -25849,7 +25871,7 @@ function ExecJumpMagic(jump_type)
 	local weaponMovesetController = WeaponMovesetController();
 	local specialAction = weaponMovesetController:CreateSpecialActionIfAvailable(WeaponMovesetActionContext.OnJumpMagic);
 	if (specialAction and weaponMovesetController:ReadActionInputOnEvent(specialAction, WeaponMovesetActionKind.TransformWeaponLeft, WeaponMovesetActionMod.EventAction)) then
-		if (weaponMovesetController:TranslateActionOnJumpMagic(specialAction, jump_type)) then
+		if (weaponMovesetController:TranslateActionOnJumpMagic(jump_type, specialAction)) then
 			return TRUE;
 		end
 	end
