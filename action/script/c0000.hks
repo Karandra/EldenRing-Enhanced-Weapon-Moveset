@@ -59,7 +59,7 @@
 -- N/A
 
 ------------------------------------------
--- Guard Stance Moveset
+-- Enhanced Weapon Moveset
 ------------------------------------------
 
 -- Common functions
@@ -84,7 +84,7 @@ function GetMovesetOverride(hand)
 end
 
 -- Enums
-local GuardStanceActionKind =
+local WeaponMovesetActionKind =
 {
 	None = 0,
 
@@ -112,19 +112,19 @@ local GuardStanceActionKind =
 	MAX = 13
 };
 
-local GuardStanceActionMod =
+local WeaponMovesetActionMod =
 {
 	None = 1000,
 	
 	EventAction = 1001,
-	WeaponArt = 1002, -- See note in GuardStanceActionKind
+	WeaponArt = 1002, -- See note in WeaponMovesetActionKind
 	Stealth = 1003,
-	LockOn = 1004, -- See note in GuardStanceActionKind
+	LockOn = 1004, -- See note in WeaponMovesetActionKind
 	
 	MAX = 1005
 };
 
-local GuardStanceActionContext =
+local WeaponMovesetActionContext =
 {
 	None = 0,
 	
@@ -141,7 +141,7 @@ local GuardStanceActionContext =
 	OnGuardEnd = 101
 };
 
-local GuardStanceOnUpdate =
+local WeaponMovesetOnUpdateKind =
 {
 	-- 1h Light Right
 	AttackRightLight1 = 101,
@@ -212,12 +212,12 @@ local GuardStanceOnUpdate =
 	HeavyChargeEnd = -1002,
 };
 
-local g_GuardStanceMoveset = nil;
+local g_WeaponMovesetController = nil;
 
--- GuardStanceMoveset class
+-- WeaponMovesetController class
 -- Parameters:
 	-- int hand: the hand to initialize the weapon for, if nil the active hand is used
-function GuardStanceMoveset(hand)
+function WeaponMovesetController(hand)
 	local vtbl =
 	{
 		-- public [static]:
@@ -299,7 +299,7 @@ function GuardStanceMoveset(hand)
 				local logFileMode = "a+b";
 				
 				local success, err = pcall(function(...)
-					local this = g_GuardStanceMoveset;
+					local this = g_WeaponMovesetController;
 					
 					if (not this.LogFile) then
 						-- No __close or __gc metamethod in this Lua version, it'll get closed when
@@ -395,10 +395,10 @@ function GuardStanceMoveset(hand)
 				end
 				
 				-- Reset the global modifier if it's invalid
-				if (g_GuardStanceMoveset.SpecialAction.ActionMod) then
-					local command = this:TranslateActionCommand(g_GuardStanceMoveset.SpecialAction.ActionMod);
+				if (g_WeaponMovesetController.SpecialAction.ActionMod) then
+					local command = this:TranslateActionCommand(g_WeaponMovesetController.SpecialAction.ActionMod);
 					if (command and (env(ActionCancelRequest, command) == TRUE or env(ActionDuration, command) <= 0)) then
-						g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+						g_WeaponMovesetController.SpecialAction:SetMod(nil);
 					end
 				end
 			end,
@@ -437,25 +437,25 @@ function GuardStanceMoveset(hand)
 			--
 			-- Returns: bool, true if ExecAttack is allowed to continue, false otherwise
 			OnExecAttack = function(this, request, action)
-				g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+				g_WeaponMovesetController.SpecialAction:SetMod(nil);
 				
 				if (this:IsAvailable()) then
 					-- Handle alternate charge attack inputs, like when a heavy attack gets
 					-- passed though light attack chain. Simulated requests also require it.
-					g_GuardStanceMoveset.ChargeAttackInput = nil;
+					g_WeaponMovesetController.ChargeAttackInput = nil;
 					
 					if (action.Simulated) then
 						local b2 = action.B2;
 						
 						if (b2 == "W_AttackBothGuardSpecial2") then
-							g_GuardStanceMoveset.ChargeAttackInput = this:TranslateActionCommand(GuardStanceActionKind.UseItem);
+							g_WeaponMovesetController.ChargeAttackInput = this:TranslateActionCommand(WeaponMovesetActionKind.UseItem);
 						elseif (b2 == "W_AttackBothGuardSpecial3") then
-							g_GuardStanceMoveset.ChargeAttackInput = this:TranslateActionCommand(GuardStanceActionKind.EventAction);
+							g_WeaponMovesetController.ChargeAttackInput = this:TranslateActionCommand(WeaponMovesetActionKind.EventAction);
 						elseif (b2 == "W_AttackBothHeavy1bStart") then
-							g_GuardStanceMoveset.ChargeAttackInput = this:TranslateActionCommand(GuardStanceActionKind.Stealth);
+							g_WeaponMovesetController.ChargeAttackInput = this:TranslateActionCommand(WeaponMovesetActionKind.Stealth);
 						end
 					elseif (request == ATTACK_REQUEST_BOTH_LIGHT and action.B1 and string.find(action.B1, "Heavy", nil, true)) then
-						g_GuardStanceMoveset.ChargeAttackInput = ACTION_ARM_R1;
+						g_WeaponMovesetController.ChargeAttackInput = ACTION_ARM_R1;
 					end
 				end
 				return true;
@@ -509,12 +509,12 @@ function GuardStanceMoveset(hand)
 			end,
 		
 		-- public:
-			GuardStanceMoveset = function(this, hand)
+			WeaponMovesetController = function(this, hand)
 				local movesetOverride = nil;
 				if (not hand or hand ~= -1) then
 					this.MovesetOverride = GetMovesetOverride(hand);
 				elseif (hand == -1) then
-					this.SpecialAction = GuardStanceMoveset_SpecialAction(GuardStanceActionContext.Global);
+					this.SpecialAction = WeaponMoveset_SpecialAction(WeaponMovesetActionContext.Global);
 				end
 			end,
 		
@@ -541,8 +541,8 @@ function GuardStanceMoveset(hand)
 			-- the event doesn't already do that. Stores the read inout into the provided special action.
 			--
 			-- Parameters:
-				-- enum GuardStanceActionKind
-				-- enum GuardStanceActionMod
+				-- enum WeaponMovesetActionKind
+				-- enum WeaponMovesetActionMod
 			-- Returns:
 				-- bool, true if the action kind input is detected
 				-- bool, true if the action mod input is detected
@@ -565,18 +565,18 @@ function GuardStanceMoveset(hand)
 					if (command and (env(ActionRequest, command) == TRUE or env(ActionDuration, command) > 0)) then
 						specialAction.ActionKind = actionKind;
 						resultKind = true;
-					elseif (actionKind == GuardStanceActionKind.TransformWeaponLeft or actionKind == GuardStanceActionKind.TransformWeaponRight) then
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponLeft or actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
 						local arm1 = ACTION_ARM_L1;
 						local arm2 = ACTION_ARM_L2;
-						if (actionKind == GuardStanceActionKind.TransformWeaponRight) then
+						if (actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
 							local arm1 = ACTION_ARM_R1;
 							local arm2 = ACTION_ARM_R2;
 						end
 						
 						local eventActionDuration = env(ActionDuration, ACTION_ARM_ACTION);
-						if (specialAction.ActionContext == GuardStanceActionContext.OnJumpMagic) then
+						if (specialAction.ActionContext == WeaponMovesetActionContext.OnJumpMagic) then
 							if (eventActionDuration > 0 and (env(ActionDuration, arm1) > 0 or env(ActionDuration, arm2) > 0)) then
-								specialAction.ActionMod = GuardStanceActionMod.EventAction;
+								specialAction.ActionMod = WeaponMovesetActionMod.EventAction;
 								specialAction.ActionKind = actionKind;
 								
 								resultMod = true;
@@ -584,7 +584,7 @@ function GuardStanceMoveset(hand)
 							end
 						else
 							if (eventActionDuration > 0 and (env(ActionRequest, arm1) == TRUE or env(ActionRequest, arm2) == TRUE)) then
-								specialAction.ActionMod = GuardStanceActionMod.EventAction;
+								specialAction.ActionMod = WeaponMovesetActionMod.EventAction;
 								specialAction.ActionKind = actionKind;
 								
 								resultMod = true;
@@ -601,9 +601,9 @@ function GuardStanceMoveset(hand)
 			-- Handles input events from the global context and dispatches them as necessary
 			--
 			-- Parameters:
-				-- enum GuardStanceActionKind
-				-- enum GuardStanceActionMod
-				-- enum GuardStanceActionContext
+				-- enum WeaponMovesetActionKind
+				-- enum WeaponMovesetActionMod
+				-- enum WeaponMovesetActionContext
 			-- Returns: bool, true if the if we're going to process this event outselves thus preventing it from activating
 			HandleSpecialActionOnEvent = function(this, actionKind, actionMod, specialAction, condition)
 				--this:DebugOutput("[HandleSpecialActionOnEvent] actionKind = %s, actionMod = %s, specialAction = %s, specialAction.ActionContext = %s", actionKind, actionMod, tostring(specialAction), tostring(this:QueryTable(specialAction, "ActionContext")));
@@ -629,10 +629,10 @@ function GuardStanceMoveset(hand)
 				
 				if (actionMod) then
 					if (CheckExtraCondition()) then
-						if (actionKind and (actionKind ~= GuardStanceActionKind.TransformWeaponLeft and actionKind ~= GuardStanceActionKind.TransformWeaponRight)) then
+						if (actionKind and (actionKind ~= WeaponMovesetActionKind.TransformWeaponLeft and actionKind ~= WeaponMovesetActionKind.TransformWeaponRight)) then
 							if (not command or env(ActionDuration, command) <= 0) then
 								actionMod = nil;
-								g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+								g_WeaponMovesetController.SpecialAction:SetMod(nil);
 							end
 						end
 						
@@ -643,15 +643,15 @@ function GuardStanceMoveset(hand)
 							end
 							
 							-- Save the modifier for the global object
-							g_GuardStanceMoveset.SpecialAction:SetMod(actionMod);
+							g_WeaponMovesetController.SpecialAction:SetMod(actionMod);
 							
 							resultMod = true;
 						end
 					end
-				elseif (actionKind and g_GuardStanceMoveset.SpecialAction.ActionMod) then
-					local command = this:TranslateActionModifier(g_GuardStanceMoveset.SpecialAction.ActionMod);
+				elseif (actionKind and g_WeaponMovesetController.SpecialAction.ActionMod) then
+					local command = this:TranslateActionModifier(g_WeaponMovesetController.SpecialAction.ActionMod);
 					if (command and (env(ActionCancelRequest, command) == TRUE or env(ActionDuration, command) <= 0)) then
-						g_GuardStanceMoveset.SpecialAction:SetMod(nil);
+						g_WeaponMovesetController.SpecialAction:SetMod(nil);
 					end
 				end
 				
@@ -660,12 +660,12 @@ function GuardStanceMoveset(hand)
 					if (specialAction) then
 						actionContext = specialAction.ActionContext;
 					else
-						actionContext = g_GuardStanceMoveset.SpecialAction.ActionContext;
+						actionContext = g_WeaponMovesetController.SpecialAction.ActionContext;
 					end
 					
 					if (this:CanInvokeAction(actionKind, actionContext) and CheckExtraCondition()) then
 						local bypassInputCheck = false;
-						if (actionKind == GuardStanceActionKind.TransformWeaponLeft or actionKind == GuardStanceActionKind.TransformWeaponRight) then
+						if (actionKind == WeaponMovesetActionKind.TransformWeaponLeft or actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
 							bypassInputCheck = true;
 						end
 					
@@ -674,7 +674,7 @@ function GuardStanceMoveset(hand)
 								specialAction:SetKind(actionKind);
 								resultKind = true;
 							else
-								local specialAction = g_GuardStanceMoveset.SpecialAction:Clone();
+								local specialAction = g_WeaponMovesetController.SpecialAction:Clone();
 								specialAction.ActionKind = actionKind;
 								
 								if (this:TranslateActionOnGlobal(specialAction)) then
@@ -703,7 +703,7 @@ function GuardStanceMoveset(hand)
 				local actionMod = specialAction.ActionMod;
 				
 				if (this:IsMagicTranslationAllowed()) then
-					if (actionMod == GuardStanceActionMod.EventAction and actionKind == GuardStanceActionKind.TransformWeaponLeft) then
+					if (actionMod == WeaponMovesetActionMod.EventAction and actionKind == WeaponMovesetActionKind.TransformWeaponLeft) then
 						-- In general, any result of ExecMagic is a reason to interrupt any event that called us, since we don't want
 						-- things like being out of stamina to play the usual action. The only way that should happen if the opposite
 						-- hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
@@ -722,12 +722,12 @@ function GuardStanceMoveset(hand)
 			end,
 			
 			-- Translate the animation events for '*_onUpdate' functions.
-			-- Taking the update function kind from GuardStanceOnUpdate and the Action struct
+			-- Taking the update function kind from WeaponMovesetOnUpdateKind and the Action struct
 			-- the function is going to transform the events into the moves of the new moveset.
 			-- The 'Request' and 'ActionContext' fields are ignored by this function.
 			--
 			-- Parameters:
-				-- enum GuardStanceOnUpdate
+				-- enum WeaponMovesetOnUpdateKind
 				-- struct Action&
 			-- Returns: struct Action&
 			TranslateActionOnUpdate = function(this, onUpdateKind, action)
@@ -742,12 +742,12 @@ function GuardStanceMoveset(hand)
 				local setSpecialInterpolation = false;
 				
 				-- 1h Light Right
-				if (onUpdateKind == GuardStanceOnUpdate.AttackRightLight1) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(1);
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackRightLight2) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(2);
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackRightLight3) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(3);
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackRightLight1) then
+					g_WeaponMovesetController:AttackChain_OnAttack(1);
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackRightLight2) then
+					g_WeaponMovesetController:AttackChain_OnAttack(2);
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackRightLight3) then
+					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
 					if (this:IsLightAttackLoopEnabled()) then
 						action.R1 = "W_AttackRightLight2";
@@ -755,12 +755,12 @@ function GuardStanceMoveset(hand)
 				end
 				
 				-- 1h Left
-				if (onUpdateKind == GuardStanceOnUpdate.AttackLeftHeavy1) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(1);
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackLeftHeavy2) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(2);
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackLeftHeavy3) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(3);
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLeftHeavy1) then
+					g_WeaponMovesetController:AttackChain_OnAttack(1);
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLeftHeavy2) then
+					g_WeaponMovesetController:AttackChain_OnAttack(2);
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLeftHeavy3) then
+					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
 					if (this:IsLightAttackLoopEnabled()) then
 						action.L2 = "W_AttackLeftHeavy2";
@@ -768,21 +768,21 @@ function GuardStanceMoveset(hand)
 				end
 				
 				-- 2h Light
-				if (onUpdateKind == GuardStanceOnUpdate.AttackBothLight1) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(1);
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight1) then
+					g_WeaponMovesetController:AttackChain_OnAttack(1);
 					
 					action.B2 = "W_AttackBothGuardSpecial3";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothLight2) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(2);
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothLight3) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(3);
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight2) then
+					g_WeaponMovesetController:AttackChain_OnAttack(2);
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight3) then
+					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
 					if (this:IsLightAttackLoopEnabled()) then
 						action.B1 = "W_AttackBothLight2";
 					end
 					action.B2 = "W_AttackBothHeavy1aStart";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothLight4) then
-					g_GuardStanceMoveset:AttackChain_OnAttack(4);
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight4) then
+					g_WeaponMovesetController:AttackChain_OnAttack(4);
 					
 					-- While we have R1(3) -> R1(2) looping setup, if we somehow got to R1(4)
 					-- make it loop back to R1(3) and set a matching heavy so it all looks nice.
@@ -790,56 +790,56 @@ function GuardStanceMoveset(hand)
 						action.B1 = "W_AttackBothLight3";
 					end
 					action.B2 = "W_AttackBothHeavy2aStart";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothDash) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothDash) then
 					action.B2 = "W_AttackBothHeavy1aStart";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothBackstep) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothBackstep) then
 					action.B2 = "W_AttackBothHeavy2Start";
 				end
 				
 				-- 2h Guard Counter
-				if (onUpdateKind == GuardStanceOnUpdate.AttackBothGuardCounter or onUpdateKind == GuardStanceOnUpdate.AttackBothHeavyGuardCounter) then
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardCounter or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavyGuardCounter) then
 					comboResetCheck = false;
 					action.B2 = "W_AttackBothHeavy1aStart";
 				end
 				
 				-- 2h Heavy
-				if (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavy2Start) then
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2Start) then
 					action.B1 = "W_AttackBothLight3";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavy2End) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2End) then
 					action.B1 = "W_AttackBothLight3";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavyDash) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavyDash) then
 					action.B1 = "W_AttackBothLight3";
 					action.B2 = "W_AttackBothHeavy1bStart";
 				end
 				
 				-- 2h Heavy A
-				if (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavy1aStart) then
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1aStart) then
 					setSpecialInterpolation = true;
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavy2aStart) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2aStart) then
 					action.B1 = "W_AttackBothLight2";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavy2aEnd) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2aEnd) then
 					action.B1 = "W_AttackBothLight2";
 					action.B2 = "W_AttackBothGuardSpecial2";
 				end
 				
 				-- 2h Heavy B
-				if (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavy1bStart) then
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1bStart) then
 					setSpecialInterpolation = true;
 					action.B2 = "W_AttackBothHeavy1aStart";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavy2bStart) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bStart) then
 					action.B1 = "W_AttackBothLight3";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothHeavy2bEnd) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bEnd) then
 					action.B1 = "W_AttackBothLight3";
 				end
 				
 				-- 2h Guard Special
-				if (onUpdateKind == GuardStanceOnUpdate.AttackBothGuardSpecial1) then
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardSpecial1) then
 					action.B1 = "W_AttackBothGuardSpecial3";
 					action.B2 = "W_AttackBothHeavy1bStart";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothGuardSpecial2) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardSpecial2) then
 					action.B1 = "W_AttackBothLight3";
 					action.B2 = "W_AttackBothGuardSpecial3";
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackBothGuardSpecial3) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardSpecial3) then
 					action.B1 = "W_AttackBothHeavy1bStart";
 					action.B2 = "W_AttackBothGuardSpecial2";
 				end
@@ -874,7 +874,7 @@ function GuardStanceMoveset(hand)
 				--this:DebugOutput("[TranslateActionOnGuard] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
 				
 				local attackRequest = nil;
-				local actionContext = GuardStanceActionContext.OnGuard;
+				local actionContext = WeaponMovesetActionContext.OnGuard;
 				local b1 = "W_AttackBothLight2";
 				local b2 = "W_AttackBothHeavy1aStart";
 				
@@ -887,16 +887,16 @@ function GuardStanceMoveset(hand)
 						-- Special actions require atatck request to be set otherwise ExecAttack
 						-- is going to ignore the call. Supported by ExecAttack2 variant only.
 						
-						if (actionKind == GuardStanceActionKind.Jump) then
+						if (actionKind == WeaponMovesetActionKind.Jump) then
 							attackRequest = ATTACK_REQUEST_BOTH_LIGHT;
 							b1 = "W_AttackBothGuardSpecial1";
-						elseif (actionKind == GuardStanceActionKind.UseItem) then
+						elseif (actionKind == WeaponMovesetActionKind.UseItem) then
 							attackRequest = ATTACK_REQUEST_BOTH_HEAVY;
 							b2 = "W_AttackBothGuardSpecial2";
-						elseif (actionKind == GuardStanceActionKind.EventAction) then
+						elseif (actionKind == WeaponMovesetActionKind.EventAction) then
 							attackRequest = ATTACK_REQUEST_BOTH_HEAVY;
 							b2 = "W_AttackBothGuardSpecial3";
-						elseif (actionKind == GuardStanceActionKind.Stealth) then
+						elseif (actionKind == WeaponMovesetActionKind.Stealth) then
 							attackRequest = ATTACK_REQUEST_BOTH_HEAVY;
 							b2 = "W_AttackBothHeavy1bStart";
 						end
@@ -910,7 +910,7 @@ function GuardStanceMoveset(hand)
 			-- as for 'TranslateActionOnUpdate'.
 			--
 			-- Parameters:
-				-- enum GuardStanceOnUpdate
+				-- enum WeaponMovesetOnUpdateKind
 				-- struct Action&
 			-- Returns: struct Action&
 			TranslateActionOnJumpAttack = function(this, onUpdateKind, action)
@@ -918,11 +918,11 @@ function GuardStanceMoveset(hand)
 					return action;
 				end
 			
-				if (onUpdateKind == GuardStanceOnUpdate.AttackLightJump) then
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLightJump) then
 					action.R2 = "W_AttackRightHeavy2Start";
 					action.B2 = "W_AttackBothHeavy2bStart";
 					g_ComboReset = FALSE;
-				elseif (onUpdateKind == GuardStanceOnUpdate.AttackHeavyJump or onUpdateKind == GuardStanceOnUpdate.AttackDualJump) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackHeavyJump or onUpdateKind == WeaponMovesetOnUpdateKind.AttackDualJump) then
 					action.R2 = "W_AttackRightHeavy2Start";
 					action.B2 = "W_AttackBothHeavy1aStart";
 					g_ComboReset = FALSE;
@@ -946,7 +946,7 @@ function GuardStanceMoveset(hand)
 						local actionKind = specialAction.ActionKind;
 						local actionMod = specialAction.ActionMod;
 						
-						if (actionMod == GuardStanceActionMod.EventAction and actionKind == GuardStanceActionKind.TransformWeaponLeft) then
+						if (actionMod == WeaponMovesetActionMod.EventAction and actionKind == WeaponMovesetActionKind.TransformWeaponLeft) then
 							return this:ExecMagicTranslation(nil, nil, jump_type);
 						end
 					end
@@ -957,13 +957,13 @@ function GuardStanceMoveset(hand)
 			-- Translate the animation events for dodge attack chain (called from 'ExecAttack')
 			--
 			-- Parameters:
-				-- const class GuardStanceMoveset&: a referencce to the actual instance of GuardStanceMoveset and not the global one
+				-- const class WeaponMovesetController&: a referencce to the actual instance of WeaponMovesetController and not the global one
 				-- struct Action&
 			-- Returns: struct Action&
 			TranslateActionOnEvasion = function(this, action)
 				--this:DebugOutput("[TranslateActionOnEvasion] Action: %s, Action.R1 = %s, Action.B1 = %s", action, action.R1, action.B1);
 				
-				local nextIndex = g_GuardStanceMoveset:AttackChain_SelectNext(this);
+				local nextIndex = g_WeaponMovesetController:AttackChain_SelectNext(this);
 				if (nextIndex) then
 					local function MakeEvent(prefix, index)
 						if (index > 1) then
@@ -993,20 +993,20 @@ function GuardStanceMoveset(hand)
 			--
 			-- Returns: void
 			ResetActionOnEvasion = function(this)
-				g_GuardStanceMoveset.EvasionCount = 0;
-				g_GuardStanceMoveset.ChainAttackIndex = 0;
-				g_GuardStanceMoveset.ChainAttackAllowed = false;
+				g_WeaponMovesetController.EvasionCount = 0;
+				g_WeaponMovesetController.ChainAttackIndex = 0;
+				g_WeaponMovesetController.ChainAttackAllowed = false;
 			end,
 			
 			-- Handles the evasion counter for dodge attack chain (called from 'ExecEvasion')
 			--
 			-- Returns: void
 			ProcessActionOnEvasionFinished = function(this)
-				if (g_GuardStanceMoveset.ChainAttackAllowed) then
-					g_GuardStanceMoveset.EvasionCount = this.EvasionCount + 1;
+				if (g_WeaponMovesetController.ChainAttackAllowed) then
+					g_WeaponMovesetController.EvasionCount = this.EvasionCount + 1;
 					
-					if (g_GuardStanceMoveset.EvasionCount > 1) then
-						g_GuardStanceMoveset:ResetActionOnEvasion();
+					if (g_WeaponMovesetController.EvasionCount > 1) then
+						g_WeaponMovesetController:ResetActionOnEvasion();
 					end
 				end
 			end,
@@ -1014,28 +1014,28 @@ function GuardStanceMoveset(hand)
 			-- Common function to handle charge attack transitions for heavy attack chains
 			--
 			-- Parameters:
-				-- enum GuardStanceOnUpdate: 'HeavyCharge*' only variants.
+				-- enum WeaponMovesetOnUpdateKind: 'HeavyCharge*' only variants.
 				-- string: event name to execute
 				-- struct Action&
 			-- Returns: void
 			ChargeTransitionOnUpdate = function(this, onUpdateKind, eventName, action)
-				if (onUpdateKind == GuardStanceOnUpdate.HeavyChargeSubStart) then
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.HeavyChargeSubStart) then
 					if (env(GetEventEzStateFlag, 0) == TRUE or env(IsAnimEnd, 1) == TRUE) then
 						act(SetSpecialInterpolation, 0, TRUE);
 						ExecEventAllBody(eventName);
 					end
-				elseif (onUpdateKind == GuardStanceOnUpdate.HeavyChargeStart) then
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.HeavyChargeStart) then
 					local input = ACTION_ARM_R2;
-					if (g_GuardStanceMoveset.ChargeAttackInput) then
-						input = g_GuardStanceMoveset.ChargeAttackInput;
+					if (g_WeaponMovesetController.ChargeAttackInput) then
+						input = g_WeaponMovesetController.ChargeAttackInput;
 					end
 					
 					if ((env(ActionDuration, input) <= 0) and (env(GetGeneralTAEFlag, TAE_FLAG_CHARGING) == 1 or env(GetSpEffectID, 100280) == TRUE)) then
 						ExecEventAllBody(eventName);
-						g_GuardStanceMoveset.ChargeAttackInput = nil;
+						g_WeaponMovesetController.ChargeAttackInput = nil;
 					end
-				elseif (onUpdateKind == GuardStanceOnUpdate.HeavyChargeEnd) then
-					g_GuardStanceMoveset.ChargeAttackInput = nil;
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.HeavyChargeEnd) then
+					g_WeaponMovesetController.ChargeAttackInput = nil;
 				end
 			end,
 			
@@ -1075,7 +1075,7 @@ function GuardStanceMoveset(hand)
 				end
 				
 				local guardAttack = FALSE;
-				if (actionContext == GuardStanceActionContext.OnGuard or actionContext == GuardStanceActionContext.OnGuardEnd) then
+				if (actionContext == WeaponMovesetActionContext.OnGuard or actionContext == WeaponMovesetActionContext.OnGuardEnd) then
 					guardAttack = TRUE;
 				end
 				
@@ -1285,7 +1285,6 @@ function GuardStanceMoveset(hand)
 					local function IsInvalidMagic(magic_index, movesetOverride)
 						-- 240: all seals
 						-- 290: Staff of the Great Beyond
-						
 						if (movesetOverride == 290) then
 							return IsSorcery(magic_index);
 						elseif (movesetOverride ~= 240) then
@@ -1516,33 +1515,33 @@ function GuardStanceMoveset(hand)
 			-- Tests if the action can be invoked in the given context
 			--
 			-- Parameters:
-				-- enum GuardStanceActionKind
-				-- enum GuardStanceActionContext
+				-- enum WeaponMovesetActionKind
+				-- enum WeaponMovesetActionContext
 			-- Returns: bool
 			CanInvokeAction = function(this, actionKind, actionContext)
 				--this:DebugOutput("[CanInvokeAction] actionKind: %s, actionContext = %s", actionKind, actionContext);
 				
-				if (actionKind and actionKind > GuardStanceActionKind.None and actionKind < GuardStanceActionKind.MAX) then
-					if (actionContext == GuardStanceActionContext.OnGuard) then
+				if (actionKind and actionKind > WeaponMovesetActionKind.None and actionKind < WeaponMovesetActionKind.MAX) then
+					if (actionContext == WeaponMovesetActionContext.OnGuard) then
 						return this:AnyOf(
 						{
-							GuardStanceActionKind.Jump,
-							GuardStanceActionKind.Stealth,
-							GuardStanceActionKind.UseItem,
-							GuardStanceActionKind.EventAction
+							WeaponMovesetActionKind.Jump,
+							WeaponMovesetActionKind.Stealth,
+							WeaponMovesetActionKind.UseItem,
+							WeaponMovesetActionKind.EventAction
 						}, actionKind);
-					elseif (actionContext == GuardStanceActionContext.OnGuardEnd) then
+					elseif (actionContext == WeaponMovesetActionContext.OnGuardEnd) then
 						return this:AnyOf(
 						{
-							GuardStanceActionKind.UseItem,
-							GuardStanceActionKind.EventAction,
-							GuardStanceActionKind.SwitchWeaponRight
+							WeaponMovesetActionKind.UseItem,
+							WeaponMovesetActionKind.EventAction,
+							WeaponMovesetActionKind.SwitchWeaponRight
 						}, actionKind);
-					elseif (actionContext == GuardStanceActionContext.Global) then
+					elseif (actionContext == WeaponMovesetActionContext.Global) then
 						if (this:IsMagicTranslationAllowed()) then
 							return this:AnyOf(
 							{
-								GuardStanceActionKind.TransformWeaponLeft
+								WeaponMovesetActionKind.TransformWeaponLeft
 							}, actionKind);
 						end
 					end
@@ -1559,27 +1558,27 @@ function GuardStanceMoveset(hand)
 			-- Translate the action kind to its corresponding input command
 			--
 			-- Parameters:
-				-- enum GuardStanceActionKind
+				-- enum WeaponMovesetActionKind
 			-- Returns: int: one of ACTION_ARM_* values, nil if no translation exists for the given action kind
 			TranslateActionCommand = function(this, actionKind)
 				-- TransformWeapon variants aren't a singular action so they don't have such translation
 				
-				if (actionKind and actionKind > GuardStanceActionKind.None and actionKind < GuardStanceActionKind.MAX) then
-					if (actionKind == GuardStanceActionKind.UseItem) then
+				if (actionKind and actionKind > WeaponMovesetActionKind.None and actionKind < WeaponMovesetActionKind.MAX) then
+					if (actionKind == WeaponMovesetActionKind.UseItem) then
 						return ACTION_ARM_USE_ITEM;
-					elseif (actionKind == GuardStanceActionKind.Jump) then
+					elseif (actionKind == WeaponMovesetActionKind.Jump) then
 						return ACTION_ARM_CHANGE_STYLE;
-					elseif (actionKind == GuardStanceActionKind.EventAction) then
+					elseif (actionKind == WeaponMovesetActionKind.EventAction) then
 						return ACTION_ARM_ACTION;
-					elseif (actionKind == GuardStanceActionKind.WeaponArt) then
+					elseif (actionKind == WeaponMovesetActionKind.WeaponArt) then
 						return ACTION_ARM_L2;
-					elseif (actionKind == GuardStanceActionKind.Stealth) then
+					elseif (actionKind == WeaponMovesetActionKind.Stealth) then
 						return ACTION_ARM_L3;
-					elseif (actionKind == GuardStanceActionKind.LockOn) then
+					elseif (actionKind == WeaponMovesetActionKind.LockOn) then
 						return ACTION_ARM_R3;
-					elseif (actionKind == GuardStanceActionKind.SwitchWeaponLeft) then
+					elseif (actionKind == WeaponMovesetActionKind.SwitchWeaponLeft) then
 						return ACTION_ARM_CHANGE_WEAPON_L;
-					elseif (actionKind == GuardStanceActionKind.SwitchWeaponRight) then
+					elseif (actionKind == WeaponMovesetActionKind.SwitchWeaponRight) then
 						return ACTION_ARM_CHANGE_WEAPON_R;
 					end
 				end
@@ -1589,17 +1588,17 @@ function GuardStanceMoveset(hand)
 			-- Translate a compatible action modifier to its corresponding input command
 			--
 			-- Parameters:
-				-- enum enum GuardStanceActionMod
+				-- enum enum WeaponMovesetActionMod
 			-- Returns: int: one of ACTION_ARM_* values, nil if no translation exists for the given action mod
 			TranslateActionModifier = function(this, actionMod)
-				if (actionMod and actionMod > GuardStanceActionMod.None and actionMod < GuardStanceActionMod.MAX) then
-					if (actionMod == GuardStanceActionMod.EventAction) then
+				if (actionMod and actionMod > WeaponMovesetActionMod.None and actionMod < WeaponMovesetActionMod.MAX) then
+					if (actionMod == WeaponMovesetActionMod.EventAction) then
 						return ACTION_ARM_ACTION;
-					elseif (actionMod == GuardStanceActionMod.WeaponArt) then
+					elseif (actionMod == WeaponMovesetActionMod.WeaponArt) then
 						return ACTION_ARM_L2;
-					elseif (actionMod == GuardStanceActionMod.Stealth) then
+					elseif (actionMod == WeaponMovesetActionMod.Stealth) then
 						return ACTION_ARM_L3;
-					elseif (actionMod == GuardStanceActionMod.LockOn) then
+					elseif (actionMod == WeaponMovesetActionMod.LockOn) then
 						return ACTION_ARM_R3;
 					end
 				end
@@ -1631,14 +1630,14 @@ function GuardStanceMoveset(hand)
 				end
 			end,
 			
-			-- A shortcut to create GuardStanceMoveset_SpecialAction only if we have a valid weapon equipped.
+			-- A shortcut to create WeaponMoveset_SpecialAction only if we have a valid weapon equipped.
 			--
 			-- Parameters:
-				-- enum GuardStanceActionContext
-			-- Returns: GuardStanceMoveset_SpecialAction
+				-- enum WeaponMovesetActionContext
+			-- Returns: WeaponMoveset_SpecialAction
 			CreateSpecialActionIfAvailable = function(this, actionContext)
 				if (this:IsAvailable()) then
-					return GuardStanceMoveset_SpecialAction(actionContext);
+					return WeaponMoveset_SpecialAction(actionContext);
 				end
 				return nil;
 			end,
@@ -1648,7 +1647,7 @@ function GuardStanceMoveset(hand)
 	{
 		__index = vtbl
 	});
-	obj:GuardStanceMoveset(hand);
+	obj:WeaponMovesetController(hand);
 	
 	return obj;
 end
@@ -1656,16 +1655,16 @@ end
 -- SpecialAction class
 --
 -- Parameters:
-	-- enum GuardStanceActionKind
-function GuardStanceMoveset_SpecialAction(actionContext)
+	-- enum WeaponMovesetActionKind
+function WeaponMoveset_SpecialAction(actionContext)
 	local vtbl =
 	{
 		-- public:
 			-- Clones this object. I really don't like Lua when I need to do things like that.
 			--
-			-- Returns: class GuardStanceMoveset_SpecialAction
+			-- Returns: class WeaponMoveset_SpecialAction
 			Clone = function(this)
-				local clone = GuardStanceMoveset_SpecialAction(this.ActionContext);
+				local clone = WeaponMoveset_SpecialAction(this.ActionContext);
 				clone.ActionKind = this.ActionKind;
 				clone.ActionMod = this.ActionMod;
 				
@@ -1675,7 +1674,7 @@ function GuardStanceMoveset_SpecialAction(actionContext)
 			-- Sets the action kind
 			--
 			-- Parameters:
-				-- enum GuardStanceActionKind
+				-- enum WeaponMovesetActionKind
 			-- Returns: void
 			SetKind = function(this, actionKind)
 				this.ActionKind = actionKind;
@@ -1684,7 +1683,7 @@ function GuardStanceMoveset_SpecialAction(actionContext)
 			-- Sets the action modifier, these act similar to Ctrl/Alt/Shift keys
 			--
 			-- Parameters:
-				-- enum GuardStanceActionMod
+				-- enum WeaponMovesetActionMod
 			-- Returns: void
 			SetMod = function(this, actionMod)
 				this.ActionMod = actionMod;
@@ -1693,7 +1692,7 @@ function GuardStanceMoveset_SpecialAction(actionContext)
 			-- Sets the action context
 			--
 			-- Parameters:
-				-- enum GuardStanceActionContext
+				-- enum WeaponMovesetActionContext
 			-- Returns: void
 			SetContext = function(this, actionContext)
 				this.ActionContext = actionContext;
@@ -1706,12 +1705,12 @@ function GuardStanceMoveset_SpecialAction(actionContext)
 	});
 end
 
--- Global GuardStanceMoveset object. It handles OnUpdate and everything related to it
-g_GuardStanceMoveset = GuardStanceMoveset(-1);
+-- Global WeaponMovesetController object. It handles OnUpdate and everything related to it
+g_WeaponMovesetController = WeaponMovesetController(-1);
 
 -- HKB update handlers
 function AttackBothGuardSpecial1_onUpdate()
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothGuardSpecial1,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothGuardSpecial1,
 	{
 		R1 = "W_AttackRightLight2",
 		L1 = "W_AttackBothLeft2",
@@ -1722,7 +1721,7 @@ function AttackBothGuardSpecial1_onUpdate()
 	AttackCommonFunction(action.R1, "W_AttackRightHeavy1Start", action.L1, "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1);
 end
 function AttackBothGuardSpecial2_onUpdate()
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothGuardSpecial2,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothGuardSpecial2,
 	{
 		R1 = "W_AttackRightLight2",
 		L1 = "W_AttackBothLeft2",
@@ -1733,7 +1732,7 @@ function AttackBothGuardSpecial2_onUpdate()
 	AttackCommonFunction(action.R1, "W_AttackRightHeavy1Start", action.L1, "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1);
 end
 function AttackBothGuardSpecial3_onUpdate()
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothGuardSpecial3,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothGuardSpecial3,
 	{
 		R1 = "W_AttackRightLight2",
 		L1 = "W_AttackBothLeft2",
@@ -1745,17 +1744,17 @@ function AttackBothGuardSpecial3_onUpdate()
 end
 
 function AttackBothHeavy1aSubStart_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy1aSubStart);
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy1aSubStart);
 	
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", "W_AttackBothLight1", "W_AttackBothHeavy2aStart", FALSE, TRUE, 0) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeSubStart, "W_AttackBothHeavy1aStart");
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeSubStart, "W_AttackBothHeavy1aStart");
 end
 function AttackBothHeavy1aStart_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy1aStart,
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy1aStart,
 	{
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy2aStart"
@@ -1764,11 +1763,11 @@ function AttackBothHeavy1aStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy2Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeStart, "W_AttackBothHeavy1aEnd", action);
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy1aEnd", action);
 end
 function AttackBothHeavy1aEnd_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy1aEnd,
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy1aEnd,
 	{
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy2aStart"
@@ -1777,11 +1776,11 @@ function AttackBothHeavy1aEnd_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy2Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeEnd, nil, action);
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
 end
 function AttackBothHeavy2aStart_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy2aStart,
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy2aStart,
 	{
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy1aStart"
@@ -1790,11 +1789,11 @@ function AttackBothHeavy2aStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeStart, "W_AttackBothHeavy2aEnd", action);
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy2aEnd", action);
 end
 function AttackBothHeavy2aEnd_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy2aEnd,
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy2aEnd,
 	{
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy1aStart"
@@ -1803,21 +1802,21 @@ function AttackBothHeavy2aEnd_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeEnd, nil, action);
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
 end
 
 function AttackBothHeavy1bSubStart_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy1bSubStart);
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy1bSubStart);
 	
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", "W_AttackBothLight1", "W_AttackBothHeavy2bStart", FALSE, TRUE, 0) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeSubStart, "W_AttackBothHeavy1bStart");
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeSubStart, "W_AttackBothHeavy1bStart");
 end
 function AttackBothHeavy1bStart_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy1bStart,
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy1bStart,
 	{
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy2bStart"
@@ -1826,11 +1825,11 @@ function AttackBothHeavy1bStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy2Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeStart, "W_AttackBothHeavy1bEnd", action);
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy1bEnd", action);
 end
 function AttackBothHeavy1bEnd_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy1bEnd,
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy1bEnd,
 	{
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy2bStart"
@@ -1839,11 +1838,11 @@ function AttackBothHeavy1bEnd_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy2Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeEnd, nil, action);
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
 end
 function AttackBothHeavy2bStart_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy2bStart,
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy2bStart,
 	{
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy1bStart"
@@ -1852,11 +1851,11 @@ function AttackBothHeavy2bStart_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeStart, "W_AttackBothHeavy2bEnd", action);
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeStart, "W_AttackBothHeavy2bEnd", action);
 end
 function AttackBothHeavy2bEnd_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-	local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy2bEnd,
+	local weaponMovesetController = WeaponMovesetController();
+	local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy2bEnd,
 	{
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy1bStart"
@@ -1865,7 +1864,7 @@ function AttackBothHeavy2bEnd_onUpdate()
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackBothLeft1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0) == TRUE then
         return;
     end
-	guardStanceMoveset:ChargeTransitionOnUpdate(GuardStanceOnUpdate.HeavyChargeEnd, nil, action);
+	weaponMovesetController:ChargeTransitionOnUpdate(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
 end
 
 ------------------------------------------
@@ -2265,7 +2264,7 @@ function ExecGuard(event, blend_type)
                 guardindex = GUARD_STYLE_DUELINGSHIELD
             end
 			
-			if (not g_GuardStanceMoveset:OnExecGuard(sp_kind, event)) then
+			if (not g_WeaponMovesetController:OnExecGuard(sp_kind, event)) then
 				return FALSE;
 			end
 
@@ -3083,8 +3082,8 @@ function IsQuickMagic()
         MAGIC_REQUEST_QUICK_FLAME
     }
 	
-	local guardStanceMoveset = GuardStanceMoveset();
-	if (guardStanceMoveset:IsMagicTranslationAllowed()) then
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationAllowed()) then
 		if (magic_type == MAGIC_REQUEST_WEAPON_ENCHANT2 or Contains(magic_type_list, magic_type) == TRUE) then
 			return TRUE;
 		end
@@ -3515,12 +3514,12 @@ function ExecAttack2(request, r1, r2, l1, l2, b1, b2, is_guard, blend_type, arts
 
     act(SetDamageMotionBlendRatio, 0)
 	
-	local guardStanceMoveset = GuardStanceMoveset();
-	if (not guardStanceMoveset:OnExecAttack(request, {R1 = r1, R2 = r2, L1 = l1, L2 = l2, B1 = b1, B2 = b2, OnGuard = is_guard == TRUE, Simulated = simulatedRequest})) then
+	local weaponMovesetController = WeaponMovesetController();
+	if (not weaponMovesetController:OnExecAttack(request, {R1 = r1, R2 = r2, L1 = l1, L2 = l2, B1 = b1, B2 = b2, OnGuard = is_guard == TRUE, Simulated = simulatedRequest})) then
 		return FALSE;
 	end
 	
-	if (guardStanceMoveset:SpecialTransitionEnabled()) then
+	if (weaponMovesetController:SpecialTransitionEnabled()) then
 		if env(IsSpecialTransitionPossible) == TRUE then
 			r1 = "W_AttackRightLight1"
 			l1 = "W_AttackLeftLight1"
@@ -3652,12 +3651,12 @@ function ExecAttack2(request, r1, r2, l1, l2, b1, b2, is_guard, blend_type, arts
             r1 = "W_AttackRightLight2"
         end
 		
-		if (guardStanceMoveset:Refresh():IsAvailable() and b1 == "W_AttackRightLightStep") then
-			local action = guardStanceMoveset:TranslateActionOnEvasion(
+		if (weaponMovesetController:Refresh():IsAvailable() and b1 == "W_AttackRightLightStep") then
+			local action = weaponMovesetController:TranslateActionOnEvasion(
 			{
 				R1 = r1
 			});
-			guardStanceMoveset:ResetActionOnEvasion();
+			weaponMovesetController:ResetActionOnEvasion();
 			
 			r1 = action.R1;
 		end
@@ -3797,12 +3796,12 @@ function ExecAttack2(request, r1, r2, l1, l2, b1, b2, is_guard, blend_type, arts
             end
         end
 		
-		if (guardStanceMoveset:Refresh():IsAvailable() and b1 == "W_AttackBothLightStep") then
-			local action = guardStanceMoveset:TranslateActionOnEvasion(
+		if (weaponMovesetController:Refresh():IsAvailable() and b1 == "W_AttackBothLightStep") then
+			local action = weaponMovesetController:TranslateActionOnEvasion(
 			{
 				B1 = b1
 			});
-			guardStanceMoveset:ResetActionOnEvasion();
+			weaponMovesetController:ResetActionOnEvasion();
 			
 			b1 = action.B1;
 		end
@@ -4572,7 +4571,7 @@ function ExecAttack2(request, r1, r2, l1, l2, b1, b2, is_guard, blend_type, arts
     act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID))
     SetAIActionState()
 	
-	guardStanceMoveset:OnAttackExecuted(request);
+	weaponMovesetController:OnAttackExecuted(request);
     return TRUE
 end
 
@@ -5479,8 +5478,8 @@ function ExecItem(quick_type, blend_type, specialAction)
     if env(ActionRequest, ACTION_ARM_USE_ITEM) == FALSE then
         return FALSE
 	else
-		local guardStanceMoveset = GuardStanceMoveset();
-		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.UseItem, nil, specialAction)) then
+		local weaponMovesetController = WeaponMovesetController();
+		if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.UseItem, nil, specialAction)) then
 			if (specialAction) then
 				return FALSE;
 			end
@@ -5878,8 +5877,8 @@ function ExecWeaponChange(blend_type, specialAction)
         return FALSE
     end
 	
-	local guardStanceMoveset = GuardStanceMoveset();
-	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.EventAction, GuardStanceActionMod.EventAction, specialAction)) then
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.EventAction, WeaponMovesetActionMod.EventAction, specialAction)) then
 		if (specialAction) then
 			return FALSE;
 		end
@@ -5893,7 +5892,7 @@ function ExecWeaponChange(blend_type, specialAction)
             HandChangeTest_ToL1 = FALSE
             HandChangeTest_ToL2 = FALSE
 			
-			if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.TransformWeaponRight, GuardStanceActionMod.EventAction, specialAction)) then
+			if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.TransformWeaponRight, WeaponMovesetActionMod.EventAction, specialAction)) then
 				if (specialAction) then
 					return FALSE;
 				end
@@ -5915,7 +5914,7 @@ function ExecWeaponChange(blend_type, specialAction)
         HandChangeTest_ToL1 = FALSE
         HandChangeTest_ToL2 = FALSE
 		
-		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.TransformWeaponLeft, GuardStanceActionMod.EventAction, specialAction)) then
+		if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.TransformWeaponLeft, WeaponMovesetActionMod.EventAction, specialAction)) then
 			if (specialAction) then
 				return FALSE;
 			end
@@ -5932,7 +5931,7 @@ function ExecWeaponChange(blend_type, specialAction)
     end
 	
     if env(ActionRequest, ACTION_ARM_CHANGE_WEAPON_R) == TRUE then
-		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.SwitchWeaponRight, nil, specialAction)) then
+		if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.SwitchWeaponRight, nil, specialAction)) then
 			if (specialAction) then
 				return FALSE;
 			end
@@ -5941,7 +5940,7 @@ function ExecWeaponChange(blend_type, specialAction)
 		
         kind = GetWeaponChangeType(HAND_RIGHT)
     elseif env(ActionRequest, ACTION_ARM_CHANGE_WEAPON_L) == TRUE then
-		if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.SwitchWeaponLeft, nil, specialAction)) then
+		if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.SwitchWeaponLeft, nil, specialAction)) then
 			if (specialAction) then
 				return FALSE;
 			end
@@ -6002,8 +6001,8 @@ function GetHandChangeType(hand)
 end
 
 function ExecJump(specialAction)
-	local guardStanceMoveset = GuardStanceMoveset();
-	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.Jump, nil, specialAction)) then
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.Jump, nil, specialAction)) then
 		if (specialAction) then
 			return FALSE;
 		end
@@ -6376,8 +6375,8 @@ function ExecEvasion(backstep_limit, estep, is_usechainrecover, specialAction)
         return FALSE
     end
 	
-	local guardStanceMoveset = GuardStanceMoveset();
-	if (guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.Stealth, GuardStanceActionMod.Stealth, specialAction)) then
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.Stealth, WeaponMovesetActionMod.Stealth, specialAction)) then
 		if (specialAction) then
 			return FALSE;
 		end
@@ -6540,7 +6539,7 @@ function ExecEvasion(backstep_limit, estep, is_usechainrecover, specialAction)
         end
 
         ExecEventAllBody(rollingEvent)
-		g_GuardStanceMoveset:ProcessActionOnEvasionFinished();
+		g_WeaponMovesetController:ProcessActionOnEvasionFinished();
 		
     elseif request == ATTACK_REQUEST_EMERGENCYSTEP then
         if MoveStart(ALLBODY, Event_ChainRecover, FALSE) then
@@ -8798,8 +8797,8 @@ function DamageCommonFunction(guardcondition, estep, fall_type)
         end
     end
 
-	local guardStanceMoveset = GuardStanceMoveset();
-	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable(GuardStanceActionContext.OnGuardEnd);
+	local weaponMovesetController = WeaponMovesetController();
+	local specialAction = weaponMovesetController:CreateSpecialActionIfAvailable(WeaponMovesetActionContext.OnGuardEnd);
 	
     if ExecJump() == TRUE then
         return TRUE
@@ -8831,14 +8830,14 @@ function DamageCommonFunction(guardcondition, estep, fall_type)
         return TRUE
     end
 	
-	if (guardcondition == TO_GUARDON and guardStanceMoveset:Refresh():IsAvailable()) then
-		local action = guardStanceMoveset:TranslateActionOnGuard(specialAction);
+	if (guardcondition == TO_GUARDON and weaponMovesetController:Refresh():IsAvailable()) then
+		local action = weaponMovesetController:TranslateActionOnGuard(specialAction);
 		action.R1 = "W_AttackRightLight1";
 		action.R2 = "W_AttackRightHeavy1Start";
 		action.L1 = "W_AttackLeftLight1";
 		action.L2 = "W_AttackLeftHeavy1";
 		
-		if (guardStanceMoveset:ExecAttack(action, ALLBODY, FALSE, FALSE, FALSE)) then
+		if (weaponMovesetController:ExecAttack(action, ALLBODY, FALSE, FALSE, FALSE)) then
 			ResetDamageCount();
 			return TRUE;
 		end
@@ -9285,10 +9284,10 @@ end
 function GuardCommonFunction(is_guard_end, blend_type, is_just_guard)
     act(Wait)
 
-	local guardStanceMoveset = GuardStanceMoveset();
-	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable(GuardStanceActionContext.OnGuard);
+	local weaponMovesetController = WeaponMovesetController();
+	local specialAction = weaponMovesetController:CreateSpecialActionIfAvailable(WeaponMovesetActionContext.OnGuard);
 	if (specialAction and is_guard_end == TRUE) then
-		specialAction:SetContext(GuardStanceActionContext.OnGuardEnd);
+		specialAction:SetContext(WeaponMovesetActionContext.OnGuardEnd);
 	end
 
     if ExecPassiveAction(FALSE, FALL_TYPE_DEFAULT, FALSE) == TRUE then
@@ -9316,8 +9315,8 @@ function GuardCommonFunction(is_guard_end, blend_type, is_just_guard)
 		return TRUE
 	end
 	
-	guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.LockOn, GuardStanceActionMod.LockOn, specialAction);
-	guardStanceMoveset:HandleSpecialActionOnEvent(GuardStanceActionKind.WeaponArt, GuardStanceActionMod.WeaponArt, specialAction);
+	weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.LockOn, WeaponMovesetActionMod.LockOn, specialAction);
+	weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.WeaponArt, WeaponMovesetActionMod.WeaponArt, specialAction);
 	
 	if is_guard_end == TRUE then
 		if ExecArtsStanceOnCancelTiming(blend_type) == TRUE then
@@ -9362,14 +9361,14 @@ function GuardCommonFunction(is_guard_end, blend_type, is_just_guard)
             guard_attack = FALSE
         end
 		
-		if (guardStanceMoveset:Refresh():IsAvailable()) then
-			local action = guardStanceMoveset:TranslateActionOnGuard(specialAction);
+		if (weaponMovesetController:Refresh():IsAvailable()) then
+			local action = weaponMovesetController:TranslateActionOnGuard(specialAction);
 			action.R1 = "W_AttackRightLight1";
 			action.R2 = "W_AttackRightHeavy1Start";
 			action.L1 = nil;
 			action.L2 = "W_AttackLeftHeavy1";
 			
-			if (guardStanceMoveset:ExecAttack(action, blend_type, FALSE, FALSE, FALSE)) then
+			if (weaponMovesetController:ExecAttack(action, blend_type, FALSE, FALSE, FALSE)) then
 				return TRUE;
 			end
 		else
@@ -11002,7 +11001,7 @@ function AttackRightLight1_onUpdate()
         r1 = "W_AttackRightLight1"
     end
 	
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackRightLight1);
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackRightLight1);
 
     if AttackCommonFunction(r1, "W_AttackRightHeavy1SubStart", "W_AttackLeftLight1", "W_AttackLeftHeavy1",
         "W_AttackBothLight2", "W_AttackBothHeavy1Start", FALSE, TRUE, 1) == TRUE then
@@ -11017,7 +11016,7 @@ function AttackRightLight2_onUpdate()
             r1 = "W_AttackRightLight1"
         end
 		
-		local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackRightLight2);
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackRightLight2);
 		
         if AttackCommonFunction(r1, "W_AttackRightHeavy1Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1",
             "W_AttackBothLight3", "W_AttackBothHeavy1Start", FALSE, TRUE, 2) == TRUE then
@@ -11036,7 +11035,7 @@ function AttackRightLight3_onUpdate()
             r1 = "W_AttackRightLight1"
         end
 		
-		local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackRightLight3,
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackRightLight3,
 		{
 			R1 = r1,
 		});
@@ -11350,7 +11349,7 @@ function AttackLeftLight1_onUpdate()
 end
 
 function AttackLeftHeavy1_onUpdate()
-	local action = GuardStanceMoveset(HAND_LEFT):TranslateActionOnUpdate(GuardStanceOnUpdate.AttackLeftHeavy1);
+	local action = WeaponMovesetController(HAND_LEFT):TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackLeftHeavy1);
 
     if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", nil, "W_AttackLeftHeavy2",
         "W_AttackBothLight1", "W_AttackBothHeavy1Start", FALSE, TRUE, 0) == TRUE then
@@ -11360,7 +11359,7 @@ end
 
 function AttackLeftHeavy2_onUpdate()
     if IsEnableNextAttack(2, HAND_LEFT) == TRUE then
-		local action = GuardStanceMoveset(HAND_LEFT):TranslateActionOnUpdate(GuardStanceOnUpdate.AttackLeftHeavy2);
+		local action = WeaponMovesetController(HAND_LEFT):TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackLeftHeavy2);
 	
         if AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", nil, "W_AttackLeftHeavy3",
             "W_AttackBothLight1", "W_AttackBothHeavy1Start", FALSE, TRUE, 0) == TRUE then
@@ -11374,7 +11373,7 @@ end
 
 function AttackLeftHeavy3_onUpdate()
     if IsEnableNextAttack(3, HAND_LEFT) == TRUE then
-		local action = GuardStanceMoveset(HAND_LEFT):TranslateActionOnUpdate(GuardStanceOnUpdate.AttackLeftHeavy3,
+		local action = WeaponMovesetController(HAND_LEFT):TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackLeftHeavy3,
 		{
 			L2 = "W_AttackLeftHeavy4",
 		});
@@ -11561,7 +11560,7 @@ function AttackBothLight1_onUpdate()
         b1 = "W_AttackBothLight1"
 	end
 	
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothLight1,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight1,
 	{
 		B1 = b1,
 		B2 = "W_AttackBothHeavy1SubStart"
@@ -11580,7 +11579,7 @@ function AttackBothLight2_onUpdate()
             b1 = "W_AttackBothLight1"
         end
 		
-		local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothLight2,
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight2,
 		{
 			B1 = b1,
 			B2 = "W_AttackBothHeavy1Start"
@@ -11603,7 +11602,7 @@ function AttackBothLight3_onUpdate()
             b1 = "W_AttackBothLight1"
 		end
 		
-		local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothLight3,
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight3,
 		{
 			B1 = b1,
 			B2 = "W_AttackBothHeavy1SubStart"
@@ -11620,16 +11619,16 @@ function AttackBothLight3_onUpdate()
 end
 
 function AttackBothLight4_onUpdate()
-	local guardStanceMoveset = GuardStanceMoveset();
-    if IsEnableNextAttack(4, HAND_RIGHT) == TRUE or guardStanceMoveset:IsAvailable() then
+	local weaponMovesetController = WeaponMovesetController();
+    if IsEnableNextAttack(4, HAND_RIGHT) == TRUE or weaponMovesetController:IsAvailable() then
         local b1 = "W_AttackBothLight5";
 		local b2 = "W_AttackBothHeavy1SubStart";
-        if (g_ComboReset == TRUE or guardStanceMoveset:GetLightAttackCount() < 5) then
+        if (g_ComboReset == TRUE or weaponMovesetController:GetLightAttackCount() < 5) then
             b1 = "W_AttackBothLight1";
 			b2 = "W_AttackBothHeavy1Start";
         end
 		
-		local action = guardStanceMoveset:TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothLight4,
+		local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight4,
 		{
 			B1 = b1,
 			B2 = b2
@@ -11810,7 +11809,7 @@ function AttackBothHeavy2Start_onUpdate()
         return
     end
 	
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy2Start,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy2Start,
 	{
 		B1 = "W_AttackBothLight1"
 	});
@@ -11827,7 +11826,7 @@ function AttackBothHeavy2Start_onUpdate()
 end
 
 function AttackBothHeavy2End_onUpdate()
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavy2End,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavy2End,
 	{
 		B1 = "W_AttackBothLight1"
 	});
@@ -11909,7 +11908,7 @@ function AttackBothDash_onUpdate()
         b1 = "W_AttackBothLight1"
 	end
 	
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothDash,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothDash,
 	{
 		B1 = b1,
 		B2 = "W_AttackBothHeavy1Start"
@@ -11927,7 +11926,7 @@ function AttackBothHeavyDash_onUpdate()
         b1 = "W_AttackBothLight1";
 	end
 	
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavyDash,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavyDash,
 	{
 		B1 = b1,
 		B2 = "W_AttackBothHeavy1Start"
@@ -11967,7 +11966,7 @@ function AttackBothBackstep_onUpdate()
         b1 = "W_AttackBothLight1"
     end
 	
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothBackstep,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothBackstep,
 	{
 		B1 = b1,
 		B2 = "W_AttackBothHeavy1Start"
@@ -12019,7 +12018,7 @@ function AttackBothLightCounter_onUpdate()
         b1 = "W_AttackBothLight1"
     end
 	
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothGuardCounter,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothGuardCounter,
 	{
 		R1 = r1,
 		B1 = b1,
@@ -12038,7 +12037,7 @@ function AttackBothHeavyCounter_onUpdate()
         b1 = "W_AttackBothLight1"
     end
 	
-	local action = GuardStanceMoveset():TranslateActionOnUpdate(GuardStanceOnUpdate.AttackBothHeavyGuardCounter,
+	local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothHeavyGuardCounter,
 	{
 		R1 = "W_AttackRightLight2",
 		B1 = b1,
@@ -20402,8 +20401,7 @@ function Update()
         end
     end
 	
-	-- Guard Stance Moveset
-	g_GuardStanceMoveset:OnUpdate();
+	g_WeaponMovesetController:OnUpdate();
 
     -- Euporia
     local isChangingWeaponRight = FALSE
@@ -25848,10 +25846,10 @@ function JumpCommonFunction(jump_type)
 end
 
 function ExecJumpMagic(jump_type)
-	local guardStanceMoveset = GuardStanceMoveset();
-	local specialAction = guardStanceMoveset:CreateSpecialActionIfAvailable(GuardStanceActionContext.OnJumpMagic);
-	if (specialAction and guardStanceMoveset:ReadActionInputOnEvent(specialAction, GuardStanceActionKind.TransformWeaponLeft, GuardStanceActionMod.EventAction)) then
-		if (guardStanceMoveset:TranslateActionOnJumpMagic(specialAction, jump_type)) then
+	local weaponMovesetController = WeaponMovesetController();
+	local specialAction = weaponMovesetController:CreateSpecialActionIfAvailable(WeaponMovesetActionContext.OnJumpMagic);
+	if (specialAction and weaponMovesetController:ReadActionInputOnEvent(specialAction, WeaponMovesetActionKind.TransformWeaponLeft, WeaponMovesetActionMod.EventAction)) then
+		if (weaponMovesetController:TranslateActionOnJumpMagic(specialAction, jump_type)) then
 			return TRUE;
 		end
 	end
@@ -26475,7 +26473,7 @@ end
 function Jump_LandAttack_Normal_onUpdate()
     SetAIActionState()
 	
-	local action = GuardStanceMoveset():TranslateActionOnJumpAttack(GuardStanceOnUpdate.AttackLightJump,
+	local action = WeaponMovesetController():TranslateActionOnJumpAttack(WeaponMovesetOnUpdateKind.AttackLightJump,
 	{
 		R2 = "W_AttackRightHeavy1Start",
 		B2 = "W_AttackBothHeavy1Start"
@@ -26500,7 +26498,7 @@ end
 function Jump_LandAttack_Hard_onUpdate()
     SetAIActionState()
 	
-	local action = GuardStanceMoveset():TranslateActionOnJumpAttack(GuardStanceOnUpdate.AttackHeavyJump,
+	local action = WeaponMovesetController():TranslateActionOnJumpAttack(WeaponMovesetOnUpdateKind.AttackHeavyJump,
 	{
 		R2 = "W_AttackRightHeavy1Start",
 		B2 = "W_AttackBothHeavy1Start"
@@ -26536,20 +26534,20 @@ function JumpLandCommonFunction()
         local b1 = "W_AttackBothLightSubStart"
 		local b2 = "W_AttackBothHeavy1Start";
 		
-		local guardStanceMoveset = GuardStanceMoveset();
-		if (guardStanceMoveset:IsAvailable()) then
+		local weaponMovesetController = WeaponMovesetController();
+		if (weaponMovesetController:IsAvailable()) then
 			local kind = nil;
 			local jumpAttackRequest = GetVariable("JumpAttackFormRequest");
 			if (jumpAttackRequest == 0) then
-				kind = GuardStanceOnUpdate.AttackLightJump;
+				kind = WeaponMovesetOnUpdateKind.AttackLightJump;
 			elseif (jumpAttackRequest == 1) then
-				kind = GuardStanceOnUpdate.AttackHeavyJump;
+				kind = WeaponMovesetOnUpdateKind.AttackHeavyJump;
 			elseif (jumpAttackRequest == 2) then
-				kind = GuardStanceOnUpdate.AttackDualJump;
+				kind = WeaponMovesetOnUpdateKind.AttackDualJump;
 			end
 			
 			if (kind) then
-				local action = guardStanceMoveset:TranslateActionOnJumpAttack(kind,
+				local action = weaponMovesetController:TranslateActionOnJumpAttack(kind,
 				{
 					R1 = r1,
 					R2 = r2,
