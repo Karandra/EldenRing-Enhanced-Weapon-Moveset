@@ -6,6 +6,7 @@
 *.dcx.bak
 *.dsasbak
 chr/_DSAS_CACHE/*
+chr/_DSAS_WORKSPACE.json
 
 # Unpacked dcx files
 chr/c0000-behbnd-dcx/*
