@@ -1,4 +1,4 @@
-Num  = 2774
+Num  = 2779
 1    = "a000_000052.hkt_WC"
 2    = "a000_000515.hkt_WC"
 3    = "AddDamageGuardStartBack_to_AddDamageDefaultGuard"
@@ -2773,4 +2773,9 @@ Num  = 2774
 2772 = "W_AttackBothHeavy1bEnd"
 2773 = "W_AttackBothHeavy2bStart"
 2774 = "W_AttackBothHeavy2bEnd"
+2775 = "W_AttackBothHeavy1cStart"
+2776 = "W_AttackBothHeavy1cSubStart"
+2777 = "W_AttackBothHeavy1cEnd"
+2778 = "W_AttackBothHeavy2cStart"
+2779 = "W_AttackBothHeavy2cEnd"
     

@@ -1,4 +1,4 @@
-Num  = 2306
+Num  = 2311
 1    = "AddBlendSpeak"
 2    = "AddDamageDefault"
 3    = "AddDamageDefaultGuard"
@@ -2305,4 +2305,9 @@ Num  = 2306
 2304 = "AttackBothHeavy2bEnd"
 2305 = "AttackBothGuardSpecial2"
 2306 = "AttackBothGuardSpecial3"
+2307 = "AttackBothHeavy1cStart"
+2308 = "AttackBothHeavy1cSubStart"
+2309 = "AttackBothHeavy1cEnd"
+2310 = "AttackBothHeavy2cStart"
+2311 = "AttackBothHeavy2cEnd"
     
