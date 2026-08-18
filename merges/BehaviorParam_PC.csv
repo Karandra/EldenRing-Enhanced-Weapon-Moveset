@@ -1,0 +1,6 @@
+ID,Name,variationId,behaviorJudgeId,ezStateBehaviorType_old,refType,pad2,refId,consumeSA,stamina,consumeDurability,category,heroPoint,pad1,
+100307470,KGS/BKGS/IGS - Guard Stance,307,470,1,0,[0|0],307470,0,0,0,0,0,[0|0]
+100307480,KGS/BKGS/IGS - Guard Stance (During Parry),307,480,1,0,[0|0],307480,0,0,0,0,0,[0|0]
+100307591,KGS/BKGS/IGS - Guard Stance: Quick Deflect,307,591,1,0,[0|0],307591,0,12,0,0,0,[0|0]
+300307087,KGS/BKGS/IGS - Guard Stance: Special A (Sword Bash),307,87,1,0,[0|0],300307801,0,16,0,9,0,[0|0]
+306700087,LGS - Guard Stance: Special A (Sword Bash),307,87,1,0,[0|0],300307801,0,16,0,9,0,[0|0]
