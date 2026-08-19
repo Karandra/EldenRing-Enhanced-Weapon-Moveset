@@ -830,11 +830,19 @@ function WeaponMovesetController(hand)
 						if (this:IsNetworkCompatibilityEnabled()) then
 							action.B2 = "W_AttackBothHeavy2Start";
 						else
+							-- [TrueComboBreak]
+							--action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy2cStart";
 						end
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight2) then
 					g_WeaponMovesetController:AttackChain_OnAttack(2);
+					
+					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy1cStart";
+						end
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight3) then
 					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
@@ -842,9 +850,14 @@ function WeaponMovesetController(hand)
 						if (this:IsLightAttackLoopEnabled()) then
 							action.B1 = "W_AttackBothLight2";
 						end
+						
 						if (this:IsNetworkCompatibilityEnabled()) then
 							action.B2 = "W_AttackBothHeavy2Start";
 						else
+							if (this:IsLightAttackLoopEnabled()) then
+								-- [TrueComboBreak]
+								--action.B1 = "W_AttackBothHeavy1aStart";
+							end
 							action.B2 = "W_AttackBothHeavy1bStart";
 						end
 					end
@@ -868,11 +881,16 @@ function WeaponMovesetController(hand)
 						if (this:IsNetworkCompatibilityEnabled()) then
 							action.B2 = "W_AttackBothHeavy2Start";
 						else
+							-- [TrueComboBreak]
+							--action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy1bStart";
 						end
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothBackstep) then
 					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B1 = "W_AttackBothHeavy1aStart";
+						end
 						action.B2 = "W_AttackBothHeavy2Start";
 					end
 				end
@@ -883,17 +901,14 @@ function WeaponMovesetController(hand)
 					
 					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
 						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy1bStart";
 						end
 					end
 				end
 				
 				-- 2h Heavy
-				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2Start or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2SubStart) then
-					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
-						action.B1 = "W_AttackBothLight3";
-					end
-				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2End) then
+				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2Start or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2End) then
 					if (movesetOverride == WeaponMovesetOverride.KnightGreatsword) then
 						action.B1 = "W_AttackBothLight3";
 					end
@@ -1055,6 +1070,8 @@ function WeaponMovesetController(hand)
 						if (this:IsNetworkCompatibilityEnabled()) then
 							action.B2 = "W_AttackBothHeavy2Start";
 						else
+							-- [TrueComboBreak]
+							--action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy2cStart";
 						end
 						
@@ -1066,6 +1083,8 @@ function WeaponMovesetController(hand)
 						if (this:IsNetworkCompatibilityEnabled()) then
 							action.B2 = "W_AttackBothHeavy2Start";
 						else
+							-- [TrueComboBreak]
+							--action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy1bStart";
 						end
 						
