@@ -98,14 +98,18 @@ end
 local WeaponMovesetCategory =
 {
 	Greatsword = WEAPON_CATEGORY_LARGE_SWORD,
-	LightGreatsword = WEAPON_CATEGORY_LIGHT_LARGE_SWORD
+	LightGreatsword = WEAPON_CATEGORY_LIGHT_LARGE_SWORD,
+	SpellCatalyst = WEAPON_CATEGORY_STAFF
 };
 local WeaponMovesetOverride =
 {
 	None = 0,
 	
 	KnightGreatsword = 128, -- Knight's Greatsword, Banished Knight's Greatsword, Inseparable Greatsword
-	RellanaTwinBlades = 249 -- Rellana's Twin Blades
+	RellanaTwinBlades = 249, -- Rellana's Twin Blades
+	
+	SacredSeal = 240, -- All seals
+	StaffOfTheGreatBeyond = 290 -- Staff of the Great Beyond
 };
 
 local WeaponMovesetActionKind =
@@ -1163,6 +1167,40 @@ function WeaponMovesetController(hand)
 				return action;
 			end,
 			
+			-- Translate the input commands for magic casting events used by ExecMagicTranslation. This is needed so when we swap
+			-- the animation to cast from the right hand instead of the left, we could still charge the spell with the left hand
+			-- input command.
+			-- Called from 'MagicLoop[Left|Right]_Upper_onUpdate' and 'MagicLoop[Left|Right][_|2|3]_Upper_onUpdate'.
+			--
+			-- Parameters:
+				-- int animationKind: the animation style this function is called from
+			-- Returns: struct InputAction {.Hand = HAND_*, .Command = ACTION_ARM_*}, nil if no changes should be done
+			TranslateMagicInputOnUpdate = function(this, animationKind)
+				if (animationKind == HAND_LEFT or animationKind == HAND_RIGHT) then
+					return {Hand = this:TranslateMagicHandOnActivate(animationKind), Command = ACTION_ARM_L1};
+				end
+				return nil;
+			end,
+			
+			-- Translate the hand to be set as a weapon reference upon magic event activation.
+			-- Called from 'Magic[Left|Right]_Upper_Activate'.
+			--
+			-- Parameters:
+				-- int animationKind: the animation style this function is called from
+			-- Returns: int, nil if no changes should be done
+			TranslateMagicHandOnActivate = function(this, animationKind)
+				if (animationKind == HAND_LEFT or animationKind == HAND_RIGHT) then
+					local style = c_Style;
+					
+					if (style == HAND_RIGHT_BOTH) then
+						return HAND_LEFT;
+					elseif (style == HAND_LEFT_BOTH) then
+						return HAND_RIGHT;
+					end
+				end
+				return nil;
+			end,
+			
 			-- Common function to handle charge attack transitions for heavy attack chains
 			--
 			-- Parameters:
@@ -1275,20 +1313,16 @@ function WeaponMovesetController(hand)
 					magic_hand = HAND_LEFT;
 					magicButton = ACTION_ARM_MAGIC_L;
 				elseif (style == HAND_LEFT_BOTH) then
-					-- Doesn't work properly unfortunately
-					--[[
 					wep_hand = HAND_LEFT;
 					magic_hand = HAND_RIGHT;
 					magicButton = ACTION_ARM_MAGIC_R;
-					--]]
-					return false, MagicTranslationStatus.InvalidCatalyst;
 				else
 					return false, MagicTranslationStatus.TwoHandingRequired;
 				end
 				
-				-- Staves and seals for some reasons are all WEAPON_CATEGORY_STAFF
 				local equipType = env(GetEquipWeaponCategory, magic_hand);
-				if (equipType == WEAPON_CATEGORY_STAFF) then
+				local movesetOverride = env(GetEquipWeaponSpecialCategoryNumber, magic_hand);
+				if (equipType == WeaponMovesetCategory.SpellCatalyst) then
 					if (env(IsMagicUseMenuOpening, magic_hand) == TRUE) then
 						ResetRequest();
 						act(OpenMenuWhenUsingMagic, magicButton);
@@ -1360,87 +1394,32 @@ function WeaponMovesetController(hand)
 							126, -- Vortex of Putrescence
 						}, magic_index);
 					end
-					local function ShouldUseRightHand(magic_index)
-						if (magic_hand == HAND_LEFT) then
-							return this:AnyOf(
-							{
-								-- Sorcery
-								-- Most need to use the right hand to look correct, but that causes several issues:
-								-- * First, if the right hand is set, the spell is going to have no scaling which is totally something we don't want.
-									-- I'm totally at loss about how to solve that.
-								-- * Second, chargeable spells lose their charge option. Not sure why, probably expect different input.
-									-- These probably work the same as weapon charge attacks so I'd have to find their behaviors and change the charge input.
-								-- * Third, most cast visuals are going to be missing if they're supposed to spawn on the staff.
-									-- Can be easily fixed when everything else is done.
-								-- With the issues above present, at the moment, we can only allow right hand for spells that don't scale and have correct
-								-- visuals when in right hand. All That leaves us only a few utility spells. It's better to disable sorcery at all for now.
-								
-								--1, -- Glintstone Pebble, Great Glintstone Shard, Glintstone Icecrag
-								--2, -- Glintstone Cometshard, Comet, Shard Spiral, Night Comet
-								--79, -- Swift Glintstone Shard
-								--107, -- Glintstone Stars, Star Shower, Stars of Ruin, Magic Downpour, Glintstone Nail, Glintstone Nails
-								--16, -- Glintstone Arc
-								--4, -- Crystal Barrage
-								--113, -- Crystal Burst, Shattering Crystal, Night Maiden's Mist, Freezing Mist, Fia's Mist
-								--92, -- Cannon of Haima
-								--78, -- Gavel of Haima
-								--56, -- Shatter Earth (two-handed animation, sword is inverted)
-								--57, -- Rock Blaster (two-handed animation, sword is inverted)
-								--11, -- Scholar Armament, Frozen Armament, Unseen Blade (no right hand animation)
-								--12, -- Scholar Shield (not applicable)
-								13, -- Starlight, Terra Magica, Lucidity
-								110, -- Thops's Barrier (some visuals are lost, but not extremely)
-								--7, -- Comet Azur, Crystal Torrent (lloks somewhat okay with left hand)
-								--124, -- Founding Rain of Stars
-								--118, -- Magic Glintblade
-								--138, -- Glintblade Trio
-								--8, -- Glintblade Phalanx, Carian Phalanx, Eternal Darkness
-								--95, -- Greatblade Phalanx, Rykard's Rancor
-								--5, -- Loretta's Greatbow, Loretta's Mastery (looks okay with left hand)
-								--6, -- Rennala's Full Moon, Ranni's Dark Moon (looks just fine in left hand)
-								--161, -- Rellana's Twin Moons (looks okay in left hand, sword is inverted anyway)
-								--80, -- Carian Slicer
-								--9, -- Carian Greatsword, Adula's Moonblade
-								--10, -- Carian Piercer
-								--84, -- Carian Retaliation
-								127, -- Miriam's Vanishing
-								--83, -- Ambush Shard
-								--79, -- Night Shard
-								109, -- Unseen Form
-								--117, -- Magma Shot, Rolling Magma
-								--102, -- Gelmir's Fury
-								--14, -- Zamor Ice Storm (fine with left hand)
-								--58, -- Crystal Release (fine with left hand)
-								--120, -- Gravity Well, Collapsing Stars, Gravitational Missile, Blades of Stone, Fleeting Microcosm (fine with left hand)
-								--108, -- Rock Sling
-								--15, -- Meteorite, Meteorite of Astel
-								--157, -- Cherishing Fingers
-								--75, -- Oracle Bubbles
-								--76, -- Great Oracular Bubble
-								--81, -- Briars of Sin
-								--82, -- Briars of Punishment
-								--150, -- Mantle of Thorns
-								--156, -- Impenetrable Thorns
-								--103, -- Rancorcall, Ancient Death Rancor
-								--143, -- Rings of Spectral Light
-								--115, -- Explosive Ghostflame (fine with left hand)
-								--121, -- Tibia's Summons
-								--158, -- Mass of Putrescence
-								--126, -- Vortex of Putrescence
-								
-								-- Incantations
-								-- None of them require it, though some can use weapon sheating during the animation.
-								-- Need to figure out how to do that, but it's a pretty minor issue.
-							}, magic_index);
-						end
-						return false;
+					local function ShouldRotateWeapon(magic_index)
+						return this:AnyOf(
+						{
+							MAGIC_REQUEST_DRILL,
+							MAGIC_REQUEST_METEOR,
+							MAGIC_REQUEST_GRAVITY,
+							MAGIC_REQUEST_BLASTING,
+							MAGIC_REQUEST_MAGIC_SPARK,
+							115, -- Explosive Ghostflame
+							120, -- Gravity Well, Collapsing Stars, Gravitational Missile, Blades of Stone, Fleeting Microcosm
+							121, -- Tibia's Summons
+							157, -- Cherishing Fingers
+							82, -- Briars of Punishment
+							150, -- Mantle of Thorns
+							156, -- Impenetrable Thorns
+							161, -- Rellana's Twin Moons
+						}, magic_index);
 					end
-					local function IsInvalidMagic(magic_index, movesetOverride)
-						-- 240: all seals
-						-- 290: Staff of the Great Beyond
-						if (movesetOverride == 290) then
-							return IsSorcery(magic_index);
-						elseif (movesetOverride ~= 240) then
+					local function ShouldUseRightHand(magic_index)
+						if (this:AnyOf(
+							{
+								11, -- Scholar Armament, Frozen Armament, Unseen Blade (no animation for the right hand)
+								80, -- Carian Slicer (looks odd otherwise, since slicer is much shorter than Knight's Greatsword)
+							}, magic_index)) then
+							return false;
+						elseif (IsSorcery(magic_index)) then
 							return true;
 						end
 						return false;
@@ -1457,6 +1436,12 @@ function WeaponMovesetController(hand)
 							MAGIC_REQUEST_CHOP,
 							MAGIC_REQUEST_SCYTHE
 						}, magic_index);
+					end
+					local function IsMagicUsable(magic_index)
+						return env(IsMagicUseable, magic_hand, 0) == TRUE;
+					end
+					local function IsMagicInvalid(magic_index)
+						return magic_index == 254 or magic_index == 255;
 					end
 					
 					act(DecideMagicUse)
@@ -1499,7 +1484,7 @@ function WeaponMovesetController(hand)
 						end
 					end
 					
-					if (env(IsMagicUseable, magic_hand, 0) == FALSE) then
+					if (not IsMagicUsable(magic_index)) then
 						--this:DebugOutput("[ExecMagicTranslation] Event_MagicInvalid (Cannot use magic)");
 						
 						if (jump_type) then
@@ -1517,8 +1502,7 @@ function WeaponMovesetController(hand)
 						end
 					end
 					
-					local movesetOverride = env(GetEquipWeaponSpecialCategoryNumber, magic_hand);
-					if (magic_index == 254 or magic_index == 255 or IsInvalidMagic(magic_index, movesetOverride)) then
+					if (IsMagicInvalid(magic_index)) then
 						--this:DebugOutput("[ExecMagicTranslation] Event_MagicInvalid (InvalidMagic)");
 						
 						if (jump_type) then
@@ -1536,16 +1520,16 @@ function WeaponMovesetController(hand)
 						end
 					end
 					
-					-- Not sure this really is required here. Looks like something to move shield out of the way?
+					
 					if (not jump_type) then
+						-- Not sure this really is required here. Looks like something to move shield out of the way? Check hkb later
 						SetVariable("MagicRight_ShieldCategory", 0);
-						if (magic_index == MAGIC_REQUEST_GRAVITY or magic_index == MAGIC_REQUEST_METEOR or magic_index
-							== MAGIC_REQUEST_BLASTING or magic_index == MAGIC_REQUEST_DRILL or magic_index == MAGIC_REQUEST_MAGIC_SPARK
-							or magic_index == 115 or magic_index == 120 or magic_index == 121 or magic_index == 157 or magic_index == 82
-							or magic_index == 150 or magic_index == 156 or magic_index == 161) then
-							SetVariable("Magic_SpecialStaffCategory", 0);
+						
+						-- Similar to 'JumpAttack_HandCondition', but for weapon/staff position for some spells like gravity ones
+						if (ShouldRotateWeapon(magic_index)) then
+							SetVariable("Magic_SpecialStaffCategory", 2);
 						elseif (magic_index == 141 or magic_index == 128 or magic_index == 146) then
-							if (env(GetEquipWeaponSpecialCategoryNumber, magic_hand) == 290) then -- Staff of the Great Beyond
+							if (movesetOverride == WeaponMovesetOverride.StaffOfTheGreatBeyond) then
 								SetVariable("Magic_SpecialStaffCategory", 1);
 							else
 								SetVariable("Magic_SpecialStaffCategory", 0);
@@ -1556,6 +1540,8 @@ function WeaponMovesetController(hand)
 					end
 					
 					if (jump_type) then
+						-- All checks are done, switch the magic hand to left since we're always casting from the left hand by default
+						magic_hand = HAND_LEFT;
 						if (ShouldUseRightHand(magic_index)) then
 							magic_hand = HAND_RIGHT;
 						end
@@ -1630,6 +1616,8 @@ function WeaponMovesetController(hand)
 						local lastMagicMem = lastUsedMagicAnim;
 						lastUsedMagicAnim = magic_index;
 						
+						-- All checks are done, switch the magic hand to left since we're always casting from the left hand by default
+						magic_hand = HAND_LEFT;
 						if (ShouldUseRightHand(magic_index)) then
 							magic_hand = HAND_RIGHT;
 						end
@@ -17586,6 +17574,16 @@ function MagicRight_Upper_Activate()
         SetAttackHand(HAND_RIGHT)
         SetGuardHand(HAND_RIGHT)
     end
+	
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local hand = weaponMovesetController:TranslateMagicHandOnActivate(HAND_RIGHT);
+		if (hand) then
+			SetAttackHand(hand);
+			SetGuardHand(hand);
+		end
+	end
+	
     ActivateRightArmAdd(START_FRAME_NONE)
 end
 
@@ -17597,6 +17595,16 @@ function MagicLeft_Upper_Activate()
     act(DebugLogOutput, "MagicLeft_Upper_Activate")
     SetAttackHand(HAND_LEFT)
     SetGuardHand(HAND_LEFT)
+	
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local hand = weaponMovesetController:TranslateMagicHandOnActivate(HAND_LEFT);
+		if (hand) then
+			SetAttackHand(hand);
+			SetGuardHand(hand);
+		end
+	end
+	
     ActivateRightArmAdd(START_FRAME_A02)
 end
 
@@ -17643,6 +17651,15 @@ function MagicLoopRight_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_R2
     end
+	
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
 
     if env(ActionDuration, button) <= 0 or env(IsMagicUseable, wep_hand, 1) == FALSE or env(GetStamina) <= 0 then
         local magic_index = env(GetMagicAnimType)
@@ -17678,6 +17695,15 @@ function MagicFireRight_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_R2
     end
+	
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
 
     if env(GetSpEffectID, 100610) == TRUE
         and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, wep_hand, 1) == FALSE) then
@@ -17762,7 +17788,18 @@ function MagicLoopLeft_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_L2
     end
-    if env(ActionDuration, button) <= 0 or env(IsMagicUseable, HAND_LEFT, 1) == FALSE or env(GetStamina) <= 0 then
+	
+	local wep_hand = HAND_LEFT;
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
+	
+    if env(ActionDuration, button) <= 0 or env(IsMagicUseable, wep_hand, 1) == FALSE or env(GetStamina) <= 0 then
         local magic_index = env(GetMagicAnimType)
         if magic_index == MAGIC_REQUEST_EX_LARGE_ARROW then
             ExecEventHalfBlend(Event_MagicFireLeftCancel2, blend_type)
@@ -17813,6 +17850,16 @@ function MagicFireRight2_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_R2
     end
+	
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
+	
     if env(GetSpEffectID, 100610) == TRUE and (env(ActionDuration, button) <= 0 or mp_condition >= env(GetFP)) then
         ExecEventHalfBlend(Event_MagicFireRightCancel2, blend_type)
         return
@@ -17847,6 +17894,16 @@ function MagicFireRight3_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_R2
     end
+	
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
+	
     if env(GetSpEffectID, 100610) == TRUE and (env(ActionDuration, button) <= 0 or mp_condition >= env(GetFP)) then
         ExecEventHalfBlend(Event_MagicFireRightCancel3, blend_type)
         return
@@ -17879,9 +17936,19 @@ function MagicFireLeft_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_L2
     end
+	
+	local wep_hand = HAND_LEFT;
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
 
     if env(GetSpEffectID, 100610) == TRUE
-        and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, HAND_LEFT, 1) == FALSE) then
+        and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, wep_hand, 1) == FALSE) then
         ExecEventHalfBlend(Event_MagicFireLeftCancel, blend_type)
         return
     end
@@ -17977,9 +18044,19 @@ function MagicFireLeft2_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_L2
     end
+	
+	local wep_hand = HAND_LEFT;
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
 
     if env(GetSpEffectID, 100610) == TRUE
-        and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, HAND_LEFT, 1) == FALSE) then
+        and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, wep_hand, 1) == FALSE) then
         ExecEventHalfBlend(Event_MagicFireLeftCancel2, blend_type)
         return
     end
@@ -18023,9 +18100,19 @@ function MagicFireLeft3_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_L2
     end
+	
+	local wep_hand = HAND_LEFT;
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
 
     if env(GetSpEffectID, 100610) == TRUE
-        and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, HAND_LEFT, 1) == FALSE) then
+        and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, wep_hand, 1) == FALSE) then
         ExecEventHalfBlend(Event_MagicFireLeftCancel3, blend_type)
         return
     end
