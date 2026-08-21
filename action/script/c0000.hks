@@ -555,6 +555,27 @@ function WeaponMovesetController(hand)
 				g_WeaponMovesetController.ChainAttackAllowed = false;
 			end,
 			
+			-- Handles the jump activation routine, called from 'Jump_Activate' and 'Jump_[N|F|D]_onActivate'
+			--
+			-- Parameters:
+				-- int jumpType: -1 = Global, 0 = W_JumpAttack_Start_Falling, 1 = W_JumpAttack_Start_Falling_F, 2 = W_JumpAttack_Start_Falling_D
+			-- Returns: void
+			OnJumpActivate = function(this, jumpType)
+				if (this:IsMagicTranslationEnabled()) then
+					Jump_InitWeaponRef = FALSE;
+					Jump_LeftWeaponRef = FALSE;
+				end
+			end,
+			
+			-- Handles the jump update routine, called from 'Jump_Update'
+			--
+			-- Parameters:
+				-- int jumpType: -1 = Global, 0 = W_JumpAttack_Start_Falling, 1 = W_JumpAttack_Start_Falling_F, 2 = W_JumpAttack_Start_Falling_D
+			-- Returns: void
+			OnJumpUpdate = function(this, jumpType)
+				
+			end,
+			
 		-- public:
 			WeaponMovesetController = function(this, hand)
 				local movesetOverride = nil;
@@ -1519,7 +1540,6 @@ function WeaponMovesetController(hand)
 							return true;
 						end
 					end
-					
 					
 					if (not jump_type) then
 						-- Not sure this really is required here. Looks like something to move shield out of the way? Check hkb later
@@ -25667,6 +25687,9 @@ function Jump_Activate()
     Jump_LeftWeaponRef = FALSE
     ActivateRightArmAdd(START_FRAME_A02)
     ResetDamageCount()
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnJumpActivate(-1);
 end
 
 function Jump_Update()
@@ -25697,6 +25720,9 @@ function Jump_Update()
         Jump_InitWeaponRef = TRUE
         act(SetThrowPossibilityState_Defender, 400000)
     end
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnJumpUpdate(-1);
 end
 
 function JumpAttackRight_Activate()
@@ -26554,6 +26580,9 @@ end
 function Jump_N_onActivate()
     act(AIJumpState)
     SetAIActionState()
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnJumpActivate(0);
 end
 
 function Jump_N_onUpdate()
@@ -26593,6 +26622,9 @@ end
 function Jump_F_onActivate()
     act(AIJumpState)
     SetAIActionState()
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnJumpActivate(1);
 end
 
 function Jump_F_onUpdate()
@@ -26620,6 +26652,9 @@ end
 function Jump_D_onActivate()
     act(AIJumpState)
     SetAIActionState()
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnJumpActivate(2);
 end
 
 function Jump_D_onUpdate()
