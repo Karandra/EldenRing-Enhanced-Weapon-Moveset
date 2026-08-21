@@ -18313,6 +18313,15 @@ function MagicFireRightJump_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_R2
     end
+	
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
 
     if env(GetSpEffectID, 100610) == TRUE
         and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, wep_hand, 1) == FALSE) then
@@ -18359,6 +18368,16 @@ function MagicFireLeftJump_Upper_onUpdate()
     if IsWeaponCatalyst(sp_kind) == TRUE then
         button = ACTION_ARM_L2
     end
+	
+	local weaponMovesetController = WeaponMovesetController();
+	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
+		if (inputAction) then
+			wep_hand = inputAction.Hand;
+			button = inputAction.Command;
+		end
+	end
+	
     if env(GetSpEffectID, 100610) == TRUE
         and (env(ActionDuration, button) <= 0 or env(IsMagicUseable, wep_hand, 1) == FALSE) then
         ExecEventHalfBlend(Event_MagicFireRightJumpCancel, blend_type)
