@@ -580,6 +580,57 @@ function WeaponMovesetController(hand)
 				-- enum WeaponMovesetJumpKind: nil if unspecified
 			-- Returns: void
 			OnJumpUpdate = function(this, jumpKind)
+				if (this:IsMagicTranslationEnabled()) then
+					local function IsMagicNodeEnabled(hand)
+						local suffix;
+						if (hand == HAND_LEFT) then
+							suffix = "Left";
+						elseif (hand == HAND_RIGHT) then
+							suffix = "Right";
+						else
+							return false;
+						end
+						
+						local IsNodeActive = IsNodeActive;
+						return
+						(
+							IsNodeActive("Jump_N Selector_Magic_" .. suffix) == TRUE or
+							IsNodeActive("Jump_F Selector_Magic_" .. suffix) == TRUE or
+							IsNodeActive("Jump_D Selector_Magic_" .. suffix) == TRUE or
+							IsNodeActive("Jump_Loop_Magic_" .. suffix .. "_CMSG") == TRUE or
+							IsNodeActive("Jump_Land_Common_Magic_" .. suffix .. "_Swing_Selector") == TRUE or
+							IsNodeActive("JumpMagic_Start_Falling_ConditionSelector_" .. suffix) == TRUE or
+							IsNodeActive("JumpMagic_Start_Falling_N_ConditionSelector_" .. suffix) == TRUE or
+							IsNodeActive("JumpMagic_Start_Falling_F_ConditionSelector_" .. suffix) == TRUE or
+							IsNodeActive("JumpMagic_Start_Falling_D_ConditionSelector_" .. suffix) == TRUE
+						);
+					end
+					
+					-- Using TranslateMagicHandOnActivate isn't entirely correct, but we don't need the input command here anyway
+					if (IsMagicNodeEnabled(HAND_LEFT)) then
+						local hand = this:TranslateMagicHandOnActivate(HAND_LEFT);
+						if (hand) then
+							--this:DebugOutput("[OnJumpUpdate]/HAND_LEFT Set to hand %s (HAND_LEFT = %s, HAND_RIGHT = %s), jumpKind = %s", hand, HAND_LEFT, HAND_RIGHT, tostring(jumpKind));
+						
+							SetAttackHand(hand);
+							SetGuardHand(hand);
+						end
+					elseif (IsMagicNodeEnabled(HAND_RIGHT)) then
+						local hand = this:TranslateMagicHandOnActivate(HAND_RIGHT);
+						if (hand) then
+							--this:DebugOutput("[OnJumpUpdate]/HAND_RIGHT Set to hand %s (HAND_LEFT = %s, HAND_RIGHT = %s), jumpKind = %s", hand, HAND_LEFT, HAND_RIGHT, tostring(jumpKind));
+							
+							SetAttackHand(hand);
+							SetGuardHand(hand);
+						end
+					else
+						--this:DebugOutput("[OnJumpUpdate]/[...] Reset hand, jumpKind = %s", tostring(jumpKind));
+						
+						-- Reset, let Jump_Update handle it
+						Jump_InitWeaponRef = FALSE;
+						Jump_LeftWeaponRef = FALSE;
+					end
+				end
 			end,
 			
 		-- public:
@@ -1200,7 +1251,7 @@ function WeaponMovesetController(hand)
 			-- Called from 'MagicLoop[Left|Right]_Upper_onUpdate' and 'MagicLoop[Left|Right][_|2|3]_Upper_onUpdate'.
 			--
 			-- Parameters:
-				-- int animationKind: the animation style this function is called from
+				-- int animationKind: the animation style this function is called from (HAND_LEFT or HAND_RIGHT)
 			-- Returns: struct InputAction {.Hand = HAND_*, .Command = ACTION_ARM_*}, nil if no changes should be done
 			TranslateMagicInputOnUpdate = function(this, animationKind)
 				if (animationKind == HAND_LEFT or animationKind == HAND_RIGHT) then
@@ -1213,7 +1264,7 @@ function WeaponMovesetController(hand)
 			-- Called from 'Magic[Left|Right]_Upper_Activate'.
 			--
 			-- Parameters:
-				-- int animationKind: the animation style this function is called from
+				-- int animationKind: the animation style this function is called from (HAND_LEFT or HAND_RIGHT)
 			-- Returns: int, nil if no changes should be done
 			TranslateMagicHandOnActivate = function(this, animationKind)
 				if (animationKind == HAND_LEFT or animationKind == HAND_RIGHT) then
