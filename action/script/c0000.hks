@@ -12400,7 +12400,7 @@ function AttackBothHeavyCounter_onUpdate()
 		B2 = "W_AttackBothHeavy1Start"
 	});
 	
-    if AttackCommonFunction("W_AttackRightLight2", "W_AttackRightHeavy1Start", "W_AttackLeftLight1",
+    if AttackCommonFunction(action.R1, "W_AttackRightHeavy1Start", "W_AttackLeftLight1",
         "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 1) == TRUE then
         return
     end
