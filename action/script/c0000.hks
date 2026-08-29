@@ -510,7 +510,7 @@ function WeaponMovesetController(hand)
 					if (action.Simulated) then
 						local b2 = action.B2;
 						
-						if (b2 == "W_AttackBothHeavy1cStart") then
+						if (b2 == "W_AttackBothHeavy1cStart" or b2 == "W_AttackBothHeavy2cStart") then
 							g_WeaponMovesetController.ChargeAttackInput = this:TranslateActionCommand(WeaponMovesetActionKind.EventAction);
 						end
 					elseif (request == ATTACK_REQUEST_BOTH_LIGHT and action.B1 and string.find(action.B1, "Heavy", nil, true)) then
@@ -1161,7 +1161,7 @@ function WeaponMovesetController(hand)
 							action.B1 = "W_AttackBothGuardSpecial1";
 						elseif (actionKind == WeaponMovesetActionKind.EventAction) then
 							action.Request = ATTACK_REQUEST_BOTH_HEAVY;
-							action.B2 = "W_AttackBothHeavy1cStart";
+							action.B2 = "W_AttackBothHeavy2cStart";
 						end
 					end
 				end
