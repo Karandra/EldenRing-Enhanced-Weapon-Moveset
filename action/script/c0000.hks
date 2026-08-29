@@ -1010,7 +1010,10 @@ function WeaponMovesetController(hand)
 						if (not this:IsNetworkCompatibilityEnabled()) then
 							action.B1 = "W_AttackBothHeavy1aStart";
 						end
-						action.B2 = "W_AttackBothHeavy2Start";
+						
+						if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
+							action.B2 = "W_AttackBothHeavy2Start";
+						end
 					end
 				end
 				
