@@ -172,6 +172,8 @@ local WeaponMovesetActionContext =
 	OnJumpAttack = 10,
 	OnJumpMagic = 11,
 	
+	OnMagic = 20,
+	
 	-- When guard is actively held
 	OnGuard = 100,
 	
@@ -583,6 +585,16 @@ function WeaponMovesetController(hand)
 				g_WeaponMovesetController.ChainAttackAllowed = false;
 			end,
 			
+			-- Handles the attack activation routine, called from 'AttackBoth_Activate'
+			--
+			-- Returns: void
+			OnAttackActivate = function(this)
+				if (this:IsMagicTranslationEnabled()) then
+					Jump_InitWeaponRef = TRUE;
+					Jump_LeftWeaponRef = TRUE;
+				end
+			end,
+			
 			-- Handles the jump activation routine, called from 'Jump_Activate' and 'Jump_[N|F|D]_onActivate'
 			--
 			-- Parameters:
@@ -601,6 +613,10 @@ function WeaponMovesetController(hand)
 				-- enum WeaponMovesetJumpKind: nil if unspecified
 			-- Returns: void
 			OnJumpUpdate = function(this, jumpKind)
+				if (Jump_InitWeaponRef == TRUE) then
+					return;
+				end
+				
 				if (this:IsMagicTranslationEnabled()) then
 					local function IsMagicNodeEnabled(hand)
 						local suffix;
@@ -717,13 +733,13 @@ function WeaponMovesetController(hand)
 						local arm1 = ACTION_ARM_L1;
 						local arm2 = ACTION_ARM_L2;
 						if (actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
-							local arm1 = ACTION_ARM_R1;
-							local arm2 = ACTION_ARM_R2;
+							arm1 = ACTION_ARM_R1;
+							arm2 = ACTION_ARM_R2;
 						end
 						
-						local eventActionDuration = env(ActionDuration, ACTION_ARM_ACTION);
-						if (specialAction.ActionContext == WeaponMovesetActionContext.OnJumpMagic) then
-							if (eventActionDuration > 0 and (env(ActionDuration, arm1) > 0 or env(ActionDuration, arm2) > 0)) then
+						local eventActionOk = env(ActionDuration, ACTION_ARM_ACTION) > 0;
+						if (specialAction.ActionContext == WeaponMovesetActionContext.OnJumpMagic or specialAction.ActionContext == WeaponMovesetActionContext.OnMagic) then
+							if (eventActionOk and (env(ActionDuration, arm1) > 0 or env(ActionDuration, arm2) > 0)) then
 								specialAction.ActionMod = WeaponMovesetActionMod.EventAction;
 								specialAction.ActionKind = actionKind;
 								
@@ -731,7 +747,7 @@ function WeaponMovesetController(hand)
 								resultKind = true;
 							end
 						else
-							if (eventActionDuration > 0 and (env(ActionRequest, arm1) == TRUE or env(ActionRequest, arm2) == TRUE)) then
+							if (eventActionOk and (env(ActionRequest, arm1) == TRUE or env(ActionRequest, arm2) == TRUE)) then
 								specialAction.ActionMod = WeaponMovesetActionMod.EventAction;
 								specialAction.ActionKind = actionKind;
 								
@@ -1425,6 +1441,9 @@ function WeaponMovesetController(hand)
 					wep_hand = HAND_LEFT;
 					magic_hand = HAND_RIGHT;
 					magicButton = ACTION_ARM_MAGIC_R;
+					
+					-- Disabled for now, too many unsolved issues
+					return false, MagicTranslationStatus.InvalidCatalyst;
 				else
 					return false, MagicTranslationStatus.TwoHandingRequired;
 				end
@@ -1596,7 +1615,7 @@ function WeaponMovesetController(hand)
 					if (not IsMagicUsable(magic_index)) then
 						--this:DebugOutput("[ExecMagicTranslation] Event_MagicInvalid (Cannot use magic)");
 						
-						if (jump_type) then
+						if (jumpKind) then
 							ResetRequest();
 							return false;
 						else
@@ -1614,7 +1633,7 @@ function WeaponMovesetController(hand)
 					if (IsMagicInvalid(magic_index)) then
 						--this:DebugOutput("[ExecMagicTranslation] Event_MagicInvalid (InvalidMagic)");
 						
-						if (jump_type) then
+						if (jumpKind) then
 							ResetRequest();
 							return false;
 						else
@@ -11925,6 +11944,9 @@ function AttackBoth_Activate()
     end
     SetAttackHand(hand)
     SetGuardHand(hand)
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnAttackActivate();
 end
 
 function AttackBothLight1_onUpdate()
