@@ -1063,11 +1063,19 @@ function WeaponMovesetController(hand)
 				-- 2h Heavy B
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1bStart) then
 					setSpecialInterpolation = true;
+					
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothHeavy1cStart";
 						action.B2 = "W_AttackBothHeavy1aStart";
 					end
+				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1bEnd) then
+					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+						action.B1 = "W_AttackBothHeavy1aStart";
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bStart or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bEnd) then
+					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+						action.B1 = "W_AttackBothHeavy1aStart";
+					end
 					if (movesetOverride == WeaponMovesetOverride.LeontielGreatsword) then
 						action.B1 = "W_AttackBothLight3";
 					end
@@ -1151,6 +1159,7 @@ function WeaponMovesetController(hand)
 					action.ActionContext = specialAction.ActionContext;
 					local actionKind = specialAction.ActionKind;
 					local actionMod = specialAction.ActionMod;
+					local actionContext = specialAction.ActionContext;
 					
 					if (actionKind) then
 						-- Special actions require atatck request to be set otherwise ExecAttack
