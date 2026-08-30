@@ -109,6 +109,8 @@ local WeaponMovesetOverride =
 	
 	KnightGreatsword = 132, -- (Default: 128); Knight's Greatsword, Banished Knight's Greatsword, Inseparable Greatsword
 	LeontielGreatsword = 133, -- (Default: 269); Leontiel's Greatsword
+	
+	KnightLongsword = 139, -- (Default: 0); Leda's Sword, Idus Sword, Milady
 	RellanaTwinBlades = 249, -- Rellana's Twin Blades
 	
 	SacredSeal = 240, -- All seals
@@ -303,8 +305,8 @@ function WeaponMovesetController(hand)
 			IsAvailableOnWeapon = function(this, weaponCategory, movesetOverride)
 				if (weaponCategory == WeaponMovesetCategory.Greatsword) then
 					return movesetOverride == WeaponMovesetOverride.KnightGreatsword or movesetOverride == WeaponMovesetOverride.LeontielGreatsword;
-				--elseif (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
-					--return movesetOverride ~= WeaponMovesetOverride.RellanaTwinBlades;
+				elseif (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
+					return movesetOverride == WeaponMovesetOverride.KnightLongsword;
 				end
 				return false;
 			end,
@@ -771,7 +773,7 @@ function WeaponMovesetController(hand)
 			-- Returns: bool, true if the if we're going to process this event outselves thus preventing it from activating
 			HandleSpecialActionOnEvent = function(this, actionKind, actionMod, specialAction, condition)
 				--this:DebugOutput("[HandleSpecialActionOnEvent] actionKind = %s, actionMod = %s, specialAction = %s, specialAction.ActionContext = %s", actionKind, actionMod, tostring(specialAction), tostring(this:QueryTable(specialAction, "ActionContext")));
-				if (not this:IsAvailable() or (not actionKind and not actionMod)) then
+				if (not actionKind and not actionMod) then
 					return false;
 				end
 				-- Try to use ReadActionInputOnEvent instead?
@@ -953,6 +955,10 @@ function WeaponMovesetController(hand)
 							--action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy2cStart";
 						end
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy2cStart";
+						end
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight2) then
 					g_WeaponMovesetController:AttackChain_OnAttack(2);
@@ -979,6 +985,10 @@ function WeaponMovesetController(hand)
 							end
 							action.B2 = "W_AttackBothHeavy1bStart";
 						end
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy1cStart";
+						end
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight4) then
 					g_WeaponMovesetController:AttackChain_OnAttack(4);
@@ -995,6 +1005,12 @@ function WeaponMovesetController(hand)
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight5) then
 					g_WeaponMovesetController:AttackChain_OnAttack(5);
+					
+					if (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy1bStart";
+						end
+					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothDash) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						if (this:IsNetworkCompatibilityEnabled()) then
@@ -1003,6 +1019,10 @@ function WeaponMovesetController(hand)
 							-- [TrueComboBreak]
 							--action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy1bStart";
+						end
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy2cStart";
 						end
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothBackstep) then
@@ -1026,6 +1046,11 @@ function WeaponMovesetController(hand)
 							action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy1bStart";
 						end
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B1 = "W_AttackBothHeavy1aStart";
+							action.B2 = "W_AttackBothHeavy1bStart";
+						end						
 					end
 				end
 				
@@ -1033,10 +1058,16 @@ function WeaponMovesetController(hand)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2Start or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2End) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothLight3";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						action.B1 = "W_AttackBothLight5";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavyDash) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothLight3";
+						if (not this:IsNetworkCompatibilityEnabled()) then
+							action.B2 = "W_AttackBothHeavy1cStart";
+						end				
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						if (not this:IsNetworkCompatibilityEnabled()) then
 							action.B2 = "W_AttackBothHeavy1cStart";
 						end
@@ -1050,15 +1081,24 @@ function WeaponMovesetController(hand)
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothLight3";
 						action.B2 = "W_AttackBothHeavy1bStart";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						action.B1 = "W_AttackBothLight5";
+						action.B2 = "W_AttackBothHeavy1bStart";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1aEnd) then
 					setSpecialInterpolation = true;
 					
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-						-- Since this uncharged attack is basically the same as R1(2), make it allow it for evasion chain
+						-- Since this uncharged attack is basically the same as R1(2), allow it to enable the evasion chain
 						g_WeaponMovesetController:AttackChain_OnAttack(2);
 						
 						action.B1 = "W_AttackBothLight3";
+						action.B2 = "W_AttackBothHeavy1cStart";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						-- Since this uncharged attack is basically the same as R1(3), allow it to enable the evasion chain
+						g_WeaponMovesetController:AttackChain_OnAttack(3);
+						
+						action.B1 = "W_AttackBothLight4";
 						action.B2 = "W_AttackBothHeavy1cStart";
 					end
 				end
@@ -1070,17 +1110,25 @@ function WeaponMovesetController(hand)
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothHeavy1cStart";
 						action.B2 = "W_AttackBothHeavy1aStart";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						action.B1 = "W_AttackBothHeavy1cStart";
+						action.B2 = "W_AttackBothHeavy1aStart";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1bEnd) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+						action.B1 = "W_AttackBothHeavy1aStart";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						action.B1 = "W_AttackBothHeavy1aStart";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bStart or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bEnd) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothHeavy1aStart";
-					end
-					if (movesetOverride == WeaponMovesetOverride.LeontielGreatsword) then
-						action.B1 = "W_AttackBothLight3";
+						
+						if (movesetOverride == WeaponMovesetOverride.LeontielGreatsword) then
+							action.B1 = "W_AttackBothLight3";
+						end
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						action.B1 = "W_AttackBothHeavy1aStart";
 					end
 				end
 				
@@ -1091,20 +1139,30 @@ function WeaponMovesetController(hand)
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothHeavy1aStart";
 						action.B2 = "W_AttackBothHeavy1bStart";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						action.B1 = "W_AttackBothLight5";
+						action.B2 = "W_AttackBothHeavy1Start";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1cEnd) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothHeavy1aStart";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						action.B1 = "W_AttackBothLight5";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2cStart or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2cEnd) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothLight3";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+						action.B1 = "W_AttackBothHeavy1aStart";
 					end
 				end
 				
 				-- 2h Guard Special
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardSpecial1) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+						action.B1 = "W_AttackBothHeavy1bStart";
+						action.B2 = "W_AttackBothHeavy1cStart";
+					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						action.B1 = "W_AttackBothHeavy1bStart";
 						action.B2 = "W_AttackBothHeavy1cStart";
 					end
@@ -1153,9 +1211,14 @@ function WeaponMovesetController(hand)
 						action.B1 = "W_AttackBothHeavy1aStart";
 						action.B2 = "W_AttackBothHeavy1bStart";
 					end
-				elseif (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
-					action.B1 = "W_AttackBothLight3";
-					action.B2 = "W_AttackBothHeavy2Start";
+				elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+					if (this:IsNetworkCompatibilityEnabled()) then
+						action.B1 = "W_AttackBothLight3";
+						action.B2 = "W_AttackBothHeavy2Start";
+					else
+						action.B1 = "W_AttackBothHeavy1aStart";
+						action.B2 = "W_AttackBothHeavy1bStart";
+					end
 				end
 				
 				if (specialAction) then
@@ -1343,7 +1406,7 @@ function WeaponMovesetController(hand)
 			-- Parameters:
 				-- enum WeaponMovesetOnUpdateKind: 'HeavyCharge*' only variants.
 				-- string: event name to switch to
-				-- struct Action&
+				-- const struct Action&: serves as an extra event information
 			-- Returns: void
 			HandleChargeTransition = function(this, onUpdateKind, eventName, action)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.HeavyChargeSubStart) then
@@ -1415,7 +1478,7 @@ function WeaponMovesetController(hand)
 			-- Parameters:
 				-- int quick_type: one of the QUICKTYPE_* (or MagicTranslationQuickType) values. Will be requested from hkb if nil.
 				-- int blend_type: ALLBODY, UPPER or LOWER. ALLBODY is used if nil.
-				-- enum WeaponMovesetJumpKind
+				-- enum WeaponMovesetJumpKind: if nil, ground magic is cast
 			-- Returns:
 				-- bool: true if sucessful, false otherwise
 				-- MagicTranslationStatus: nil if success
@@ -1797,8 +1860,8 @@ function WeaponMovesetController(hand)
 				return not this:IsAvailable();
 			end,
 			
-			-- Returns true if the moveset should loop R1(3) back into R1(2) instead of allowing it to
-			-- advance to R1(4) and end there.
+			-- Returns true if the moveset should loop R1(3) back into R1(2) instead of allowing it to advance to R1(4) and end there
+			-- (example for KGS-compatible moveset).
 			--
 			-- Returns: bool
 			IsLightAttackLoopEnabled = function(this)
@@ -1807,15 +1870,19 @@ function WeaponMovesetController(hand)
 				
 				if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 					return true;
-				else
-					return false;
 				end
+				return false;
 			end,
 			
 			-- Returns true if the weapon is allowed to cast spells from the opposite hand catalyst
 			-- Returns: bool
 			IsMagicTranslationEnabled = function(this)
-				return this:IsAvailable() and this:IsTwoHanding();
+				local weaponCategory = this.WeaponCategory;
+				local movesetOverride = this.MovesetOverride;
+				
+				-- Allow Rellana's Twin Blades to use the magic trnslation even though the weapon itself isn't using the
+				-- enhanced moveset due to being a paired weapon.
+				return (this:IsAvailable() or movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) and this:IsTwoHanding();
 			end,
 			
 			-- Returns true if the moveset should be network-compatible. Network compatibility means that only the
@@ -1845,7 +1912,7 @@ function WeaponMovesetController(hand)
 					local weaponCategory = this.WeaponCategory;
 					local movesetOverride = this.MovesetOverride;
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsKGSCompatible(weaponCategory, movesetOverride) or movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						if (this:IsNetworkCompatibilityEnabled()) then
 							if (actionContext == WeaponMovesetActionContext.Global) then
 								return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
@@ -1867,8 +1934,8 @@ function WeaponMovesetController(hand)
 								end
 							end
 						end
-					elseif (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
-						if (actionContext == WeaponMovesetActionContext.Global) then
+					elseif (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
+						if (this:IsMagicTranslationEnabled() and actionContext == WeaponMovesetActionContext.Global) then
 							return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
 						end
 					end
@@ -1876,7 +1943,7 @@ function WeaponMovesetController(hand)
 				return false;
 			end,
 			
-			-- Translate the action kind to its corresponding input command
+			-- Translates the action kind to its corresponding input command
 			--
 			-- Parameters:
 				-- enum WeaponMovesetActionKind
@@ -1906,7 +1973,7 @@ function WeaponMovesetController(hand)
 				return nil;
 			end,
 			
-			-- Translate a compatible action modifier to its corresponding input command
+			-- Translates a compatible action modifier to its corresponding input command
 			--
 			-- Parameters:
 				-- enum enum WeaponMovesetActionMod
