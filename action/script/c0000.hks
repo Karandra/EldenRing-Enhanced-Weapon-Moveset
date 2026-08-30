@@ -547,6 +547,23 @@ function WeaponMovesetController(hand)
 				end
 			end,
 			
+			-- Handles the attack excution conditions, called from 'ExecJump' function
+			--
+			-- Returns: bool, true if ExecJump is allowed to continue, false otherwise
+			OnExecJump = function(this)
+				--this:DebugOutput("[OnExecJump]");
+				
+				if (this:IsAvailable()) then
+					local hand = HAND_RIGHT;
+					if (c_Style == HAND_LEFT_BOTH) then
+						hand = HAND_LEFT;
+					end
+					SetAttackHand(hand);
+					SetGuardHand(hand);
+				end
+				return true;
+			end,
+			
 			-- Handles the evasion completion, called from 'ExecEvasion'.
 			--
 			-- Returns: void
@@ -603,13 +620,11 @@ function WeaponMovesetController(hand)
 			end,
 			
 			-- Handles the attack activation routine, called from 'AttackBoth_Activate'
-			--
+			-- Parameters:
+				-- int hand: the weapon hand used in this jump attack
 			-- Returns: void
-			OnAttackActivate = function(this)
-				if (this:IsMagicTranslationEnabled()) then
-					Jump_InitWeaponRef = TRUE;
-					Jump_LeftWeaponRef = TRUE;
-				end
+			OnAttackActivate = function(this, hand)
+				--this:DebugOutput("[OnAttackActivate] Set to hand %s (HAND_LEFT = %s, HAND_RIGHT = %s, HAND_LEFT_BOTH = %s, HAND_RIGHT_BOTH = %s)", tostring(hand), HAND_LEFT, HAND_RIGHT, HAND_LEFT_BOTH, HAND_RIGHT_BOTH);
 			end,
 			
 			-- Handles the jump activation routine, called from 'Jump_Activate' and 'Jump_[N|F|D]_onActivate'
@@ -618,73 +633,41 @@ function WeaponMovesetController(hand)
 				-- enum WeaponMovesetJumpKind: nil if unspecified
 			-- Returns: void
 			OnJumpActivate = function(this, jumpKind)
-				if (this:IsMagicTranslationEnabled()) then
-					Jump_InitWeaponRef = FALSE;
-					Jump_LeftWeaponRef = FALSE;
-				end
+				--this:DebugOutput("[OnJumpActivate] jumpKind = %s", tostring(jumpKind));
+			end,
+			
+			-- Handles the jump attack activation routine.
+			-- Called from 'JumpAttackLeft_Activate', 'JumpAttackRight_Activate' and 'JumpAttackBoth_Activate'.
+			--
+			-- Parameters:
+				-- int hand: the weapon hand used in this jump attack
+			-- Returns: void
+			OnJumpAttackActivate = function(this, hand)
+				--this:DebugOutput("[OnJumpAttackActivate] Set to hand %s (HAND_LEFT = %s, HAND_RIGHT = %s, HAND_LEFT_BOTH = %s, HAND_RIGHT_BOTH = %s)", tostring(hand), HAND_LEFT, HAND_RIGHT, HAND_LEFT_BOTH, HAND_RIGHT_BOTH);
+			end,
+			
+			-- Handles the jump land attack activation routine.
+			-- Called from 'Jump_LandAttack_Normal_onActivate' and 'Jump_LandAttack_Hard_onActivate'.
+			--
+			-- Parameters:
+				-- enum WeaponMovesetOnUpdateKind
+			-- Returns: void
+			OnJumpLandAttackActivate = function(this, onUpdateKind)
+				--this:DebugOutput("[OnJumpLandAttackActivate] onUpdateKind = %s", tostring(onUpdateKind));
 			end,
 			
 			-- Handles the jump update routine, called from 'Jump_Update'
 			--
 			-- Parameters:
 				-- enum WeaponMovesetJumpKind: nil if unspecified
-			-- Returns: void
+			-- Returns: bool, true if Jump_Update is allowed to continue, false otherwise
 			OnJumpUpdate = function(this, jumpKind)
-				if (Jump_InitWeaponRef == TRUE) then
-					return;
-				end
+				--this:DebugOutput("[OnJumpUpdate]" tostring(jumpKind));
 				
 				if (this:IsMagicTranslationEnabled()) then
-					local function IsMagicNodeEnabled(hand)
-						local suffix;
-						if (hand == HAND_LEFT) then
-							suffix = "Left";
-						elseif (hand == HAND_RIGHT) then
-							suffix = "Right";
-						else
-							return false;
-						end
-						
-						local IsNodeActive = IsNodeActive;
-						return
-						(
-							IsNodeActive("Jump_N Selector_Magic_" .. suffix) == TRUE or
-							IsNodeActive("Jump_F Selector_Magic_" .. suffix) == TRUE or
-							IsNodeActive("Jump_D Selector_Magic_" .. suffix) == TRUE or
-							IsNodeActive("Jump_Loop_Magic_" .. suffix .. "_CMSG") == TRUE or
-							IsNodeActive("Jump_Land_Common_Magic_" .. suffix .. "_Swing_Selector") == TRUE or
-							IsNodeActive("JumpMagic_Start_Falling_ConditionSelector_" .. suffix) == TRUE or
-							IsNodeActive("JumpMagic_Start_Falling_N_ConditionSelector_" .. suffix) == TRUE or
-							IsNodeActive("JumpMagic_Start_Falling_F_ConditionSelector_" .. suffix) == TRUE or
-							IsNodeActive("JumpMagic_Start_Falling_D_ConditionSelector_" .. suffix) == TRUE
-						);
-					end
-					
-					-- Using TranslateMagicHandOnActivate isn't entirely correct, but we don't need the input command here anyway
-					if (IsMagicNodeEnabled(HAND_LEFT)) then
-						local hand = this:TranslateMagicHandOnActivate(HAND_LEFT);
-						if (hand) then
-							--this:DebugOutput("[OnJumpUpdate]/HAND_LEFT Set to hand %s (HAND_LEFT = %s, HAND_RIGHT = %s), jumpKind = %s", hand, HAND_LEFT, HAND_RIGHT, tostring(jumpKind));
-						
-							SetAttackHand(hand);
-							SetGuardHand(hand);
-						end
-					elseif (IsMagicNodeEnabled(HAND_RIGHT)) then
-						local hand = this:TranslateMagicHandOnActivate(HAND_RIGHT);
-						if (hand) then
-							--this:DebugOutput("[OnJumpUpdate]/HAND_RIGHT Set to hand %s (HAND_LEFT = %s, HAND_RIGHT = %s), jumpKind = %s", hand, HAND_LEFT, HAND_RIGHT, tostring(jumpKind));
-							
-							SetAttackHand(hand);
-							SetGuardHand(hand);
-						end
-					else
-						--this:DebugOutput("[OnJumpUpdate]/[...] Reset hand, jumpKind = %s", tostring(jumpKind));
-						
-						-- Reset, let Jump_Update handle it
-						Jump_InitWeaponRef = FALSE;
-						Jump_LeftWeaponRef = FALSE;
-					end
+					return false;
 				end
+				return true;
 			end,
 			
 		-- public:
@@ -1696,6 +1679,11 @@ function WeaponMovesetController(hand)
 					end
 					
 					if (jumpKind) then
+						-- Set the weapon hand reference right here for jump magic since its updating is disabled inside Jump_Update
+						-- when our magic translation is active.
+						SetAttackHand(magic_hand);
+						SetGuardHand(magic_hand);
+					
 						-- All checks are done, switch the magic hand to left since we're always casting from the left hand by default
 						magic_hand = HAND_LEFT;
 						if (ShouldUseRightHand(magic_index)) then
@@ -2417,6 +2405,8 @@ end
 
 function SetAttackHand(hand)
     act(WeaponParameterReference, hand)
+	
+	--g_WeaponMovesetController:DebugTraceback("[SetAttackHand] Set to hand %s (HAND_LEFT = %s, HAND_RIGHT = %s)", hand, HAND_LEFT, HAND_RIGHT);
 end
 
 function SetGuardHand(hand)
@@ -6427,6 +6417,9 @@ function ExecJump(specialAction)
         ResetRequest()
         return FALSE
     end
+	if (not weaponMovesetController:OnExecJump()) then
+		return FALSE;
+	end
 
     if env(GetSpEffectID, 102360) == FALSE then
         AddStamina(STAMINA_REDUCE_JUMP)
@@ -11404,6 +11397,8 @@ function AttackRight_Activate()
     SetAttackHand(HAND_RIGHT)
     SetGuardHand(HAND_RIGHT)
     ActivateRightArmAdd(START_FRAME_NONE)
+	
+	WeaponMovesetController():OnAttackActivate(HAND_RIGHT);
 end
 
 function AttackRight_Update()
@@ -11751,6 +11746,8 @@ function AttackLeft_Activate()
     SetAttackHand(HAND_LEFT)
     SetGuardHand(HAND_LEFT)
     ActivateRightArmAdd(START_FRAME_A02)
+	
+	WeaponMovesetController():OnAttackActivate(HAND_LEFT);
 end
 
 function AttackLeft_Update()
@@ -11974,8 +11971,7 @@ function AttackBoth_Activate()
     SetAttackHand(hand)
     SetGuardHand(hand)
 	
-	local weaponMovesetController = WeaponMovesetController();
-	weaponMovesetController:OnAttackActivate();
+	WeaponMovesetController():OnAttackActivate(c_Style);
 end
 
 function AttackBothLight1_onUpdate()
@@ -25952,12 +25948,16 @@ function Jump_Activate()
     ActivateRightArmAdd(START_FRAME_A02)
     ResetDamageCount()
 	
-	local weaponMovesetController = WeaponMovesetController();
-	weaponMovesetController:OnJumpActivate();
+	WeaponMovesetController():OnJumpActivate();
 end
 
 function Jump_Update()
     UpdateRightArmAdd()
+	
+	if (not WeaponMovesetController():OnJumpUpdate()) then
+		return;
+	end
+	
     if Jump_LeftWeaponRef == FALSE
         and (IsNodeActive("Jump_N Selector_Magic_Left") == TRUE or IsNodeActive("Jump_F Selector_Magic_Left") == TRUE
             or IsNodeActive("Jump_D Selector_Magic_Left") == TRUE or IsNodeActive("Jump_Loop_Magic_Left_CMSG") == TRUE
@@ -25984,19 +25984,22 @@ function Jump_Update()
         Jump_InitWeaponRef = TRUE
         act(SetThrowPossibilityState_Defender, 400000)
     end
-	
-	local weaponMovesetController = WeaponMovesetController();
-	weaponMovesetController:OnJumpUpdate();
 end
 
 function JumpAttackRight_Activate()
     SetAttackHand(HAND_RIGHT)
     SetGuardHand(HAND_LEFT)
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnJumpAttackActivate(HAND_RIGHT);
 end
 
 function JumpAttackLeft_Activate()
     SetAttackHand(HAND_LEFT)
     SetGuardHand(HAND_LEFT)
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnJumpAttackActivate(HAND_LEFT);
 end
 
 function JumpAttackBoth_Activate()
@@ -26006,6 +26009,9 @@ function JumpAttackBoth_Activate()
     end
     SetAttackHand(hand)
     SetGuardHand(hand)
+	
+	local weaponMovesetController = WeaponMovesetController();
+	weaponMovesetController:OnJumpAttackActivate(c_Style);
 end
 
 -- Called from:
@@ -27134,6 +27140,8 @@ end
 function Jump_LandAttack_Normal_onActivate()
     act(ResetInputQueue)
     SetAIActionState()
+	
+	WeaponMovesetController():OnJumpLandAttackActivate(WeaponMovesetOnUpdateKind.AttackLightJump);
 end
 
 function Jump_LandAttack_Normal_onUpdate()
@@ -27159,6 +27167,8 @@ end
 function Jump_LandAttack_Hard_onActivate()
     act(ResetInputQueue)
     SetAIActionState()
+	
+	WeaponMovesetController():OnJumpLandAttackActivate(WeaponMovesetOnUpdateKind.AttackHeavyJump);
 end
 
 function Jump_LandAttack_Hard_onUpdate()
