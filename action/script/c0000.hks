@@ -357,11 +357,23 @@ function WeaponMovesetController(hand)
 			
 		-- private:
 			DebugOutput = function(this, fmt, ...)
+				this:DebugTracebackAtLevel(nil, fmt, ...);
+			end,
+			
+			DebugTraceback = function(this, fmt, ...)
+				this:DebugTracebackAtLevel(2, fmt, ...);
+			end,
+			
+			DebugTracebackAtLevel = function(this, level, fmt, ...)
 				-- No __close or __gc metamethod in this Lua version, it'll get closed when
 				-- the game process terminates.
-			
+				
 				local logFileName = "c0000.hks.log";
 				local logFileMode = "a+b";
+				
+				local function FormatDateTime()
+					return os.date("%F %T");
+				end
 				
 				local success, err = pcall(function(...)
 					local this = g_WeaponMovesetController;
@@ -378,7 +390,7 @@ function WeaponMovesetController(hand)
 								version = "Lua 5.1";
 							end
 							
-							file:write(string.format("[Logger] c0000.hks.log opened, Running HavokScript %s\n", version));
+							file:write(string.format("[%s] [Logger] c0000.hks.log opened, Running HavokScript %s\n", FormatDateTime(), version));
 							file:flush();
 							
 							this.LogFile = file;
@@ -398,8 +410,13 @@ function WeaponMovesetController(hand)
 								args[i] = tostring(v);
 							end
 						end
-					
-						file:write(string.format(fmt, unpack(args)) .. "\n");
+						
+						local message = string.format(fmt, unpack(args));
+						if (type(level) == "number" and level >= 2) then
+							-- Exclude the debug functions themselves from the traceback
+							message = debug.traceback(message, level + 3);
+						end
+						file:write(string.format("[%s] %s\n", FormatDateTime(), message));
 						file:flush();
 					end
 				end, ...);
@@ -409,7 +426,7 @@ function WeaponMovesetController(hand)
 				if (not success) then
 					local file = io.open(logFileName, logFileMode);
 					if (file) then
-						file:write(string.format("[Logger] Exception Caught: %s\n", tostring(err)));
+						file:write(string.format("[%s] [Logger] Exception Caught trying to log '%s' with #%s parameters: %s\n", FormatDateTime(), tostring(fmt), tostring(select("#", ...)), tostring(err)));
 						file:close();
 					end
 				end
