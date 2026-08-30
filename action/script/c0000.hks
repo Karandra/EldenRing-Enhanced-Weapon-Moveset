@@ -1236,7 +1236,12 @@ function WeaponMovesetController(hand)
 							action.B1 = "W_AttackBothGuardSpecial1";
 						elseif (actionKind == WeaponMovesetActionKind.EventAction) then
 							action.Request = ATTACK_REQUEST_BOTH_HEAVY;
-							action.B2 = "W_AttackBothHeavy2cStart";
+							
+							if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+								action.B2 = "W_AttackBothHeavy2cStart";
+							elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+								action.B2 = "W_AttackBothHeavy1cStart";
+							end
 						end
 					end
 				end
