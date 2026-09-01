@@ -67,9 +67,9 @@
 -- Common functions
 function GetActiveAttackHand()
     local style = c_Style
-    if style == HAND_LEFT_BOTH then
+    if (style == HAND_LEFT_BOTH) then
         return HAND_LEFT;
-	elseif style == HAND_RIGHT_BOTH then
+	elseif (style == HAND_RIGHT_BOTH) then
         return HAND_RIGHT;
 	else
 		return style;
@@ -264,28 +264,36 @@ local WeaponMovesetOnUpdateKind =
 local g_WeaponMovesetController = nil;
 
 -- WeaponMovesetController class
--- Parameters:
+-- Parameters (1):
 	-- int hand: the hand to initialize the weapon for, if nil the active hand is used
-function WeaponMovesetController(hand)
+	
+-- Parameters (2):
+	-- WeaponMovesetCategory weaponCategory: weapon category number (or WEAPON_CATEGORY_*)
+	-- WeaponMovesetOverride movesetOverride: weapon moveset override number
+function WeaponMovesetController(_param1, _param2)
+	local MagicTranslationStatus =
+	{
+		ScriptDataExposerRequired = 1,
+		TwoHandingRequired = 2,
+		InvalidCatalyst = 3,
+		InvalidSpell = 4
+	};
+	local MagicTranslationQuickType =
+	{
+		Normal = QUICKTYPE_NORMAL, -- 0
+		Dash = QUICKTYPE_DASH, -- 1
+		Rolling = QUICKTYPE_ROLLING, -- 2
+		Attack = QUICKTYPE_ATTACK, -- 3
+		Combo = QUICKTYPE_COMBO, -- 4
+		Backstep = QUICKTYPE_BACKSTEP, -- 5
+		Run = QUICKTYPE_RUN -- 6
+	};
+
 	local vtbl =
 	{
 		-- public [static]:
-			MagicTranslationStatus =
-			{
-				TwoHandingRequired = 1,
-				InvalidCatalyst = 2,
-				InvalidSpell = 3
-			},
-			MagicTranslationQuickType
-			{
-				Normal = QUICKTYPE_NORMAL, -- 0
-				Dash = QUICKTYPE_DASH, -- 1
-				Rolling = QUICKTYPE_ROLLING, -- 2
-				Attack = QUICKTYPE_ATTACK, -- 3
-				Combo = QUICKTYPE_COMBO, -- 4
-				Backstep = QUICKTYPE_BACKSTEP, -- 5
-				Run = QUICKTYPE_RUN -- 6
-			},
+			MagicTranslationStatus = MagicTranslationStatus,
+			MagicTranslationQuickType = MagicTranslationQuickType,
 		
 		-- public [static]:
 			-- Checks if the enhanced moveset is available for the weapon in the given hand
@@ -485,6 +493,29 @@ function WeaponMovesetController(hand)
 						this.SpecialAction:SetMod(nil);
 					end
 				end
+				
+				-- Send weapon change notification
+				local activeWeaponLeft = WeaponMovesetController(HAND_LEFT);
+				if (not activeWeaponLeft:IsSameAs(this.ActiveWeaponLeft)) then
+					if (activeWeaponLeft:IsMagicTranslationEnabled()) then
+						activeWeaponLeft:GetParamData();
+					end
+					
+					local previousWeapon = this.ActiveWeaponLeft;
+					this.ActiveWeaponLeft = activeWeaponLeft;
+					this:OnWeaponChanged(HAND_LEFT, previousWeapon, activeWeaponLeft);
+				end
+				
+				local activeWeaponRight = WeaponMovesetController(HAND_RIGHT);
+				if (not activeWeaponRight:IsSameAs(this.ActiveWeaponRight)) then
+					if (activeWeaponRight:IsMagicTranslationEnabled()) then
+						activeWeaponRight:GetParamData();
+					end
+					
+					local previousWeapon = this.ActiveWeaponRight;
+					this.ActiveWeaponRight = activeWeaponRight;
+					this:OnWeaponChanged(HAND_RIGHT, previousWeapon, activeWeaponRight);
+				end
 			end,
 			
 			-- Handles the guard timeout, called from 'ExecGuard' function
@@ -666,41 +697,203 @@ function WeaponMovesetController(hand)
 			OnJumpUpdate = function(this, jumpKind)
 				--this:DebugOutput("[OnJumpUpdate]" tostring(jumpKind));
 				
-				if (this:IsMagicTranslationEnabled()) then
+				if (this:IsMagicTranslationActive()) then
 					return false;
 				end
 				return true;
 			end,
 			
+			-- Handles the weapon hand style change completion.
+			-- Called from 'HandChangeEnd_Upper_onDeactivate' and 'StealthHandChangeEnd_Upper_onDeactivate'.
+			--
+			-- Parameters:
+				-- int fromStyle: the previous hand style
+				-- int toStyle: the new hand style
+			-- Returns: void
+			OnWeaponHandStyleChanged = function(this, fromStyle, toStyle)
+				--this:DebugOutput("[OnWeaponHandStyleChanged] fromStyle = %s, toStyle = %s", fromStyle, toStyle);
+				
+				local function UpdateMagicTranslationUIFor(weapon, oppositeHand)
+					if (weapon:IsMagicTranslationEnabled()) then
+						local magicKind = {};
+						if (weapon:IsMagicTranslationActive(magicKind)) then
+							weapon:UpdateMagicTranslationUI(magicKind.Sorcery, magicKind.Incantations);
+						else
+							weapon:UpdateMagicTranslationUI(false, false);
+						end
+					end
+				end
+				
+				if (toStyle == HAND_RIGHT_BOTH) then
+					UpdateMagicTranslationUIFor(WeaponMovesetController(HAND_RIGHT), HAND_LEFT);
+				elseif (toStyle == HAND_LEFT_BOTH) then
+					UpdateMagicTranslationUIFor(WeaponMovesetController(HAND_LEFT), HAND_RIGHT);
+				end
+			end,
+			
+			-- Handles the weapon change completion.
+			-- Called from WeaponMovesetController::OnUpdate.
+			--
+			-- Parameters:
+				-- int hand: the hand weapon was changed for (HAND_LEFT or HAND_RIGHT)
+				-- WeaponMovesetController fromWeapon: the previous weapon
+				-- WeaponMovesetController toWeapon: the new weapon
+			-- Returns: void
+			OnWeaponChanged = function(this, hand, fromWeapon, toWeapon)
+				--this:DebugOutput("[OnWeaponChanged] hand = %s, fromWeapon{WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, toWeapon{WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, c_Style = %s", hand, fromWeapon.WeaponCategory, fromWeapon.MovesetOverride, fromWeapon.WeaponHand, toWeapon.WeaponCategory, toWeapon.MovesetOverride, toWeapon.WeaponHand, c_Style);
+				
+				local style = c_Style;
+				if (fromWeapon:IsSameAs(toWeapon)) then
+					return;
+					
+				-- Reset the weapon if we changed from a weapon with magic translation enabled
+				elseif (fromWeapon:IsMagicTranslationEnabled()) then
+					fromWeapon:UpdateMagicTranslationUI(false, false);
+					
+				-- Also reset our weapons if we swapped to or from a casting catalyst while having a magic translation capable weapon in the other hand
+				elseif (fromWeapon.WeaponCategory == WeaponMovesetCategory.SpellCatalyst or toWeapon.WeaponCategory == WeaponMovesetCategory.SpellCatalyst) then
+					-- No need to do anything if we've just loaded in
+					if (fromWeapon:IsNull()) then
+						return;
+					end
+					
+					local otherWeapon = nil;
+					if (hand == HAND_LEFT) then
+						otherWeapon = WeaponMovesetController(HAND_RIGHT);
+					else
+						otherWeapon = WeaponMovesetController(HAND_LEFT);
+					end
+					
+					if (otherWeapon:IsMagicTranslationEnabled()) then
+						otherWeapon:UpdateMagicTranslationUI(false, false);
+					end
+					
+				-- Edge case of loading into a game when the player is already two-handing a compatible weapon
+				elseif (fromWeapon:IsNull() and toWeapon:IsMagicTranslationEnabled() and (style == HAND_LEFT_BOTH or style == HAND_RIGHT_BOTH)) then
+					if (style == HAND_LEFT_BOTH) then
+						toWeapon:OnWeaponHandStyleChanged(HAND_LEFT, style);
+					else
+						toWeapon:OnWeaponHandStyleChanged(HAND_RIGHT, style);
+					end
+				end
+			end,
+			
 		-- public:
-			WeaponMovesetController = function(this, hand)
-				local movesetOverride = nil;
-				if (not hand or hand ~= -1) then
-					this.WeaponCategory = GetWeaponCategory(hand);
-					this.MovesetOverride = GetMovesetOverride(hand);
-				elseif (hand == -1) then
-					this.SpecialAction = WeaponMoveset_SpecialAction(WeaponMovesetActionContext.Global);
+			WeaponMovesetController = function(this, param1, param2)
+				if (not param2) then
+					local hand = param1;
+					
+					if (not hand or hand ~= -1) then
+						this:Refresh(hand);
+					elseif (hand == -1) then
+						this.SpecialAction = WeaponMoveset_SpecialAction(WeaponMovesetActionContext.Global);
+						this.ActiveWeaponLeft = WeaponMovesetController(HAND_LEFT);
+						this.ActiveWeaponRight = WeaponMovesetController(HAND_RIGHT);
+					end
+				elseif (param1 and param2) then
+					this.WeaponCategory = param1;
+					this.MovesetOverride = param2;
 				end
 			end,
 		
 		-- public:
+			-- Validity test
+			--
+			-- Returns: bool
+			IsNull = function(this)
+				local weaponCategory = this.WeaponCategory;
+				local movesetOverride = this.MovesetOverride;
+				
+				-- The global instance isn't considered null even though it doesn't have these fields
+				if (weaponCategory and movesetOverride) then
+					return weaponCategory == 0 and movesetOverride == 0;
+				end
+				return false;
+			end,
+		
+			-- Checks if the currently used weapon supports the guard stance moveset
+			--
+			-- Returns: bool
+			IsAvailable = function(this)
+				return this:IsAvailableOnWeapon(this.WeaponCategory, this.MovesetOverride);
+			end,
+			
+			-- Equality test
+			--
+			-- Returns: bool
+			IsSameAs = function(this, other)
+				if (other) then
+					return this.WeaponCategory == other.WeaponCategory and this.MovesetOverride == other.MovesetOverride;
+				end
+				return false;
+			end,
+			
 			-- Reloads the active weapon
 			--
 			-- Parameters:
-				-- int hand: the hand to check weapon for, if nil the active hand is used
+				-- int hand: the hand to check weapon for, if nil the active hand should be used
 			-- Returns: this&
 			Refresh = function(this, hand)
+				if (not hand) then
+					hand = GetActiveAttackHand();
+				end
+				
+				this.WeaponHand = hand;
 				this.WeaponCategory = GetWeaponCategory(hand);
 				this.MovesetOverride = GetMovesetOverride(hand);
 				
 				return this;
 			end,
 			
-			-- Checks if the currently used weapon supports the guard stance moveset
+			-- Returns the weapon param data. Results are cached.
 			--
-			-- Returns: bool
-			IsAvailable = function(this)
-				return this:IsAvailableOnWeapon(this.WeaponCategory, this.MovesetOverride);
+			-- Parameters:
+				-- int hand: the hand to check weapon for, if nil the active hand should be used
+			-- Returns: struct {string as int .ParamRowID, int .UpgradeLevel}, nil if unavailable
+			GetParamData = function(this)
+				--this:DebugOutput("[GetParamData] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s, ParamData = %s}", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, tostring(this.ParamData));
+				
+				if (not this.WeaponHand or this.WeaponCategory == 0) then
+					return nil;
+				end
+				if (this.ParamData) then
+					return this.ParamData;
+				end
+				
+				local dataExposer = ScriptDataExposer();
+				if (dataExposer:IsAvailable()) then
+					local equipmentSlotIndex = dataExposer:GetArmamentEquipmentSlot(this.WeaponHand);
+					if (not equipmentSlotIndex) then
+						return nil;
+					end
+					
+					local rowID = dataExposer:GetArmamentParamRowID(this.WeaponHand, equipmentSlotIndex);
+					if (rowID and rowID ~= "0") then
+						-- Since Lua's numbers are limited to float precision and lots of param rows are quite large numbers,
+						-- we can't use math.modf to get the base row number, we'll have to use string manipulation.
+						
+						-- Catpute the last two chracters of the id string and convert them to number (safe in this case, max
+						-- number it could be is 99). Then replace the capture with zeroes to get a base row ID.
+						local upgradeLevel = nil;
+						local baseRowID = string.gsub(rowID, "(%d%d)$", function(capture)
+							upgradeLevel = tonumber(capture);
+							return string.rep("0", #capture);
+						end);
+						
+						if (upgradeLevel) then
+							local result =
+							{
+								ParamRowID = baseRowID,
+								UpgradeLevel = upgradeLevel
+							};
+							this.ParamData = result;
+							--this:DebugOutput("[GetParamData] {ParamRowID = %s, UpgradeLevel = %s}", baseRowID, upgradeLevel);
+							
+							return result;
+						end
+					end
+				end
+				return nil;
 			end,
 			
 			-- Reads input for the provided action. Supposed to be used to detect input on your own when
@@ -872,17 +1065,15 @@ function WeaponMovesetController(hand)
 				local actionMod = specialAction.ActionMod;
 				local actionContext = specialAction.ActionContext;
 				
-				if (this:IsMagicTranslationEnabled()) then
+				if (this:IsMagicTranslationActive()) then
 					if (actionMod == WeaponMovesetActionMod.EventAction and actionKind == WeaponMovesetActionKind.TransformWeaponLeft) then
 						-- In general, any result of ExecMagicTranslation is a reason to interrupt any event that called us, since we don't want
 						-- things like being out of stamina to play the usual action. The only way that should happen if we aren't two-handing or
 						-- the opposite hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
 						-- casting action available.
 						
-						local MagicTranslationStatus = this.MagicTranslationStatus;
-						
 						local success, reason = this:ExecMagicTranslation();
-						if (not success and (reason == MagicTranslationStatus.TwoHandingRequired or reason == MagicTranslationStatus.InvalidCatalyst)) then
+						if (not success and (reason == MagicTranslationStatus.ScriptDataExposerRequired or reason == MagicTranslationStatus.TwoHandingRequired or reason == MagicTranslationStatus.InvalidCatalyst)) then
 							return false;
 						end
 						return true;
@@ -1316,7 +1507,7 @@ function WeaponMovesetController(hand)
 			TranslateActionOnJumpMagic = function(this, jumpKind, specialAction)
 				--this:DebugOutput("[TranslateActionOnJumpMagic] specialAction = %s, jumpKind = %s", tostring(specialAction), tostring(jumpKind));
 				
-				if (this:IsMagicTranslationEnabled()) then
+				if (this:IsMagicTranslationActive()) then
 					if (specialAction) then
 						local actionKind = specialAction.ActionKind;
 						local actionMod = specialAction.ActionMod;
@@ -1490,9 +1681,6 @@ function WeaponMovesetController(hand)
 			ExecMagicTranslation = function(this, quick_type, blend_type, jumpKind)
 				--this:DebugOutput("[ExecMagicTranslation] quick_type = %s, blend_type = %s, jumpKind = %s", tostring(quick_type), tostring(blend_type), tostring(jumpKind));
 				
-				local MagicTranslationStatus = this.MagicTranslationStatus;
-				local MagicTranslationQuickType = this.MagicTranslationQuickType;
-				
 				if c_HasActionRequest == FALSE then
 					return false;
 				end
@@ -1537,14 +1725,6 @@ function WeaponMovesetController(hand)
 						return true;
 					end
 					
-					local function UpdateMagicIndexFully()
-						-- Requires Scripts-Data-Exposer-FS
-						-- Updates the player's magic module's id to the equipped magic slot, allowing the proper usage of magic with irregular methods.
-						local UpdateMagicIdToActive = 10002;
-
-						act(UpdateMagicIdToActive);
-						act(DecideMagicUse); --UpdateMagicIndexToMagicId
-					end
 					local function IsSorcery(magic_index)
 						return this:AnyOf(
 						{
@@ -1653,8 +1833,13 @@ function WeaponMovesetController(hand)
 					end
 					
 					act(DecideMagicUse)
+					
+					local dataExposer = ScriptDataExposer();
+					if (not dataExposer:IsAvailable()) then
+						return false, MagicTranslationStatus.ScriptDataExposerRequired;
+					end
+					dataExposer.UpdateMagicIndex();
 					act(NotifyAIMagicCast)
-					UpdateMagicIndexFully();
 					
 					if (jumpKind) then
 						if (IsJumpMagic() == FALSE and IsQuickMagic() == FALSE) then
@@ -1858,6 +2043,35 @@ function WeaponMovesetController(hand)
 				end
 			end,
 			
+			-- Update the weapon param data so the spell selector UI would highlight applicable spells.
+			--
+			-- Parameters:
+				-- bool enableSorcery: true if sorcery should be highlighted as available
+				-- bool enableIncantations: true if incantations should be highlighted as available
+			-- Returns: void
+			UpdateMagicTranslationUI = function(this, enableSorcery, enableIncantations)
+				--this:DebugOutput("[UpdateMagicTranslationUI] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, enableSorcery = %s, enableIncantations = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, tostring(enableSorcery), tostring(enableIncantations));
+				
+				local dataExposer = ScriptDataExposer();
+				if (dataExposer:IsAvailable()) then
+					local paramData = this:GetParamData();
+					if (paramData) then
+						-- Bools aren't supported by the data exposer API, so turn them into ints
+						local sorcery = 0;
+						local incantations = 0;
+						if (enableSorcery) then
+							sorcery = 1;
+						end
+						if (enableIncantations) then
+							incantations = 1;
+						end
+						
+						dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x105, dataExposer.TYPE.BitField, 7, sorcery);
+						dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x106, dataExposer.TYPE.BitField, 1, incantations);
+					end
+				end				
+			end,
+			
 			-- Controls the access to env(IsSpecialTransitionPossible) inside ExecAttack.
 			--
 			-- Returns: bool
@@ -1887,7 +2101,41 @@ function WeaponMovesetController(hand)
 				
 				-- Allow Rellana's Twin Blades to use the magic trnslation even though the weapon itself isn't using the
 				-- enhanced moveset due to being a paired weapon.
-				return (this:IsAvailable() or movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) and this:IsTwoHanding();
+				return (this:IsAvailable() or movesetOverride == WeaponMovesetOverride.RellanaTwinBlades);
+			end,
+			
+			-- Returns true if the magic translation feature is active at the moment
+			--
+			-- Parameters:
+				-- struct MagicKind& {bool .Sorcery, bool .Incantations}: out struct with the magic kinds that can be translated from the
+				-- catalyst held in the other hand.
+			-- Returns: bool
+			IsMagicTranslationActive = function(this, magicKind)
+				if (this:IsMagicTranslationEnabled()) then
+					local style = c_Style;
+					
+					local otherWeapon = nil;
+					if (style == HAND_RIGHT_BOTH) then
+						otherWeapon = WeaponMovesetController(HAND_LEFT);
+					elseif (style == HAND_LEFT_BOTH) then
+						otherWeapon = WeaponMovesetController(HAND_RIGHT);
+					end
+					
+					if (otherWeapon and otherWeapon.WeaponCategory == WeaponMovesetCategory.SpellCatalyst) then
+						if (magicKind) then
+							if (otherWeapon.MovesetOverride == WeaponMovesetOverride.SacredSeal) then
+								magicKind.Incantations = true;
+							elseif (otherWeapon.MovesetOverride == WeaponMovesetOverride.StaffOfTheGreatBeyond) then
+								magicKind.Sorcery = true;
+								magicKind.Incantations = true;
+							else
+								magicKind.Sorcery = true;
+							end
+						end
+						return true;
+					end
+				end
+				return false;
 			end,
 			
 			-- Returns true if the moveset should be network-compatible. Network compatibility means that only the
@@ -1934,13 +2182,13 @@ function WeaponMovesetController(hand)
 								-- otherwise it's not possible to quickly drop the guard and jump away.
 								return actionKind == WeaponMovesetActionKind.EventAction;
 							elseif (actionContext == WeaponMovesetActionContext.Global) then
-								if (this:IsMagicTranslationEnabled()) then
+								if (this:IsMagicTranslationActive()) then
 									return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
 								end
 							end
 						end
 					elseif (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
-						if (this:IsMagicTranslationEnabled() and actionContext == WeaponMovesetActionContext.Global) then
+						if (this:IsMagicTranslationActive() and actionContext == WeaponMovesetActionContext.Global) then
 							return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
 						end
 					end
@@ -2031,7 +2279,7 @@ function WeaponMovesetController(hand)
 	{
 		__index = vtbl
 	});
-	obj:WeaponMovesetController(hand);
+	obj:WeaponMovesetController(_param1, _param2);
 	
 	return obj;
 end
@@ -3877,7 +4125,7 @@ function IsQuickMagic()
     }
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		if (magic_type == MAGIC_REQUEST_WEAPON_ENCHANT2 or Contains(magic_type_list, magic_type) == TRUE) then
 			return TRUE;
 		end
@@ -7144,6 +7392,8 @@ function ExecHandChange(hand, is_force, blend_type, no_reset)
             blend_type = UPPER
         end
     end
+	
+	g_WeaponMovesetController.PreviousHandStyle = style;
     local event = Event_HandChangeStart
     if c_IsStealth == TRUE then
         event = Event_StealthHandChangeStart
@@ -16880,6 +17130,10 @@ function HandChangeEnd_Upper_onDeactivate()
     HandChangeTest_ToR2 = FALSE
     HandChangeTest_ToL1 = FALSE
     HandChangeTest_ToL2 = FALSE
+	
+	local previousHandStyle = g_WeaponMovesetController.PreviousHandStyle;
+	g_WeaponMovesetController.PreviousHandStyle = nil;
+	g_WeaponMovesetController:OnWeaponHandStyleChanged(previousHandStyle, c_Style);
 end
 
 function StealthHandChangeEnd_Upper_onUpdate()
@@ -16904,6 +17158,10 @@ function StealthHandChangeEnd_Upper_onDeactivate()
     HandChangeTest_ToR2 = FALSE
     HandChangeTest_ToL1 = FALSE
     HandChangeTest_ToL2 = FALSE
+	
+	local previousHandStyle = g_WeaponMovesetController.PreviousHandStyle;
+	g_WeaponMovesetController.PreviousHandStyle = nil;
+	g_WeaponMovesetController:OnWeaponHandStyleChanged(previousHandStyle, c_Style);
 end
 
 function Item_Upper_Activate()
@@ -18267,7 +18525,7 @@ function MagicRight_Upper_Activate()
     end
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local hand = weaponMovesetController:TranslateMagicHandOnActivate(HAND_RIGHT);
 		if (hand) then
 			SetAttackHand(hand);
@@ -18288,7 +18546,7 @@ function MagicLeft_Upper_Activate()
     SetGuardHand(HAND_LEFT)
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local hand = weaponMovesetController:TranslateMagicHandOnActivate(HAND_LEFT);
 		if (hand) then
 			SetAttackHand(hand);
@@ -18344,7 +18602,7 @@ function MagicLoopRight_Upper_onUpdate()
     end
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -18388,7 +18646,7 @@ function MagicFireRight_Upper_onUpdate()
     end
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -18482,7 +18740,7 @@ function MagicLoopLeft_Upper_onUpdate()
 	
 	local wep_hand = HAND_LEFT;
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -18543,7 +18801,7 @@ function MagicFireRight2_Upper_onUpdate()
     end
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -18587,7 +18845,7 @@ function MagicFireRight3_Upper_onUpdate()
     end
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -18630,7 +18888,7 @@ function MagicFireLeft_Upper_onUpdate()
 	
 	local wep_hand = HAND_LEFT;
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -18738,7 +18996,7 @@ function MagicFireLeft2_Upper_onUpdate()
 	
 	local wep_hand = HAND_LEFT;
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -18794,7 +19052,7 @@ function MagicFireLeft3_Upper_onUpdate()
 	
 	local wep_hand = HAND_LEFT;
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -19006,7 +19264,7 @@ function MagicFireRightJump_Upper_onUpdate()
     end
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_RIGHT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
@@ -19061,7 +19319,7 @@ function MagicFireLeftJump_Upper_onUpdate()
     end
 	
 	local weaponMovesetController = WeaponMovesetController();
-	if (weaponMovesetController:IsMagicTranslationEnabled()) then
+	if (weaponMovesetController:IsMagicTranslationActive()) then
 		local inputAction = weaponMovesetController:TranslateMagicInputOnUpdate(HAND_LEFT);
 		if (inputAction) then
 			wep_hand = inputAction.Hand;
