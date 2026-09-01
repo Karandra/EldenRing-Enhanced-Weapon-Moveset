@@ -130,26 +130,30 @@ local WeaponMovesetActionKind =
 
 	-- Unique
 	-- Disables the standard action if set 
-	TransformWeaponLeft = 1,
-	TransformWeaponRight = 2,
-	SwitchWeaponLeft = 3,
-	SwitchWeaponRight = 4,
-	SwitchSpell = 5, -- Not possibe, at least not without hkb changes
-	SwitchItem = 6, -- Same as SwitchSpell
-	UseItem = 7,
-	Jump = 8,
+	TransformWeaponLeft = 10,
+	TransformWeaponL1 = 11,
+	TransformWeaponL2 = 12,
+	TransformWeaponRight = 20,
+	TransformWeaponR1 = 21,
+	TransformWeaponR2 = 22,
+	SwitchWeaponLeft = 30,
+	SwitchWeaponRight = 35,
+	SwitchSpell = 50, -- Not possibe, at least not without hkb changes
+	SwitchItem = 55, -- Same as SwitchSpell
+	UseItem = 100,
+	Jump = 105,
 	
 	-- Shared
 	-- These can be assigned as their own action as opposed to a modifier
 	-- and doing so disables its corresponding modifier since the action
 	-- will be invoked immediately.
 	-- Disables the standard action if set 
-	EventAction = 9,
-	WeaponArt = 10, -- Complicated to implement, maybe later
-	Stealth = 11,
-	LockOn = 12, -- Works, but doesn't disable the lockon function
+	EventAction = 200,
+	WeaponArt = 210, -- Complicated to implement, maybe later
+	Stealth = 220,
+	LockOn = 230, -- Works, but doesn't disable the lockon function
 	
-	MAX = 13
+	MAX = 231
 };
 
 local WeaponMovesetActionMod =
@@ -919,36 +923,62 @@ function WeaponMovesetController(_param1, _param2)
 					end
 				end
 				
+				local function CheckTransformWeapon(actionKind, command)
+					local eventActionDuration = env(ActionDuration, ACTION_ARM_ACTION);
+					if (eventActionDuration > 0) then
+						local commandOK = false;
+						if (specialAction.ActionContext == WeaponMovesetActionContext.OnJumpMagic or specialAction.ActionContext == WeaponMovesetActionContext.OnMagic) then
+							commandOK = env(ActionDuration, command) > 0;
+						else
+							commandOK = env(ActionRequest, command) == TRUE;
+						end
+						
+						if (commandOK) then
+							specialAction.ActionMod = WeaponMovesetActionMod.EventAction;
+							specialAction.ActionKind = actionKind;
+							specialAction.ActionDuration = env(ActionDuration, command);
+							
+							return true;
+						end
+					end
+					return false;
+				end
+				
 				if (actionKind) then
 					local command = this:TranslateActionCommand(actionKind);
 					if (command and (env(ActionRequest, command) == TRUE or env(ActionDuration, command) > 0)) then
 						specialAction.ActionKind = actionKind;
+						specialAction.ActionDuration = env(ActionDuration, command);
 						resultKind = true;
-					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponLeft or actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
-						local arm1 = ACTION_ARM_L1;
-						local arm2 = ACTION_ARM_L2;
-						if (actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
-							arm1 = ACTION_ARM_R1;
-							arm2 = ACTION_ARM_R2;
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponLeft) then
+						if (CheckTransformWeapon(WeaponMovesetActionKind.TransformWeaponL1, ACTION_ARM_L1) or CheckTransformWeapon(WeaponMovesetActionKind.TransformWeaponL2, ACTION_ARM_L2)) then
+							resultMod = true;
+							resultKind = true;
 						end
-						
-						local eventActionOk = env(ActionDuration, ACTION_ARM_ACTION) > 0;
-						if (specialAction.ActionContext == WeaponMovesetActionContext.OnJumpMagic or specialAction.ActionContext == WeaponMovesetActionContext.OnMagic) then
-							if (eventActionOk and (env(ActionDuration, arm1) > 0 or env(ActionDuration, arm2) > 0)) then
-								specialAction.ActionMod = WeaponMovesetActionMod.EventAction;
-								specialAction.ActionKind = actionKind;
-								
-								resultMod = true;
-								resultKind = true;
-							end
-						else
-							if (eventActionOk and (env(ActionRequest, arm1) == TRUE or env(ActionRequest, arm2) == TRUE)) then
-								specialAction.ActionMod = WeaponMovesetActionMod.EventAction;
-								specialAction.ActionKind = actionKind;
-								
-								resultMod = true;
-								resultKind = true;
-							end
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
+						if (CheckTransformWeapon(WeaponMovesetActionKind.TransformWeaponR1, ACTION_ARM_R1) or CheckTransformWeapon(WeaponMovesetActionKind.TransformWeaponR2, ACTION_ARM_R2)) then
+							resultMod = true;
+							resultKind = true;
+						end
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponL1) then
+						if (CheckTransformWeapon(WeaponMovesetActionKind.TransformWeaponL1, ACTION_ARM_L1)) then
+							resultMod = true;
+							resultKind = true;
+						end
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponL2) then
+						if (CheckTransformWeapon(WeaponMovesetActionKind.TransformWeaponL2, ACTION_ARM_L2)) then
+							resultMod = true;
+							resultKind = true;
+						end
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponR1) then
+						if (CheckTransformWeapon(WeaponMovesetActionKind.TransformWeaponR1, ACTION_ARM_R1)) then
+							resultMod = true;
+							resultKind = true;
+						end
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponR2) then
+						if (CheckTransformWeapon(WeaponMovesetActionKind.TransformWeaponR2, ACTION_ARM_R2)) then
+							resultMod = true;
+							resultKind = true;
 						end
 					end
 				end
@@ -966,6 +996,7 @@ function WeaponMovesetController(_param1, _param2)
 			-- Returns: bool, true if the if we're going to process this event outselves thus preventing it from activating
 			HandleSpecialActionOnEvent = function(this, actionKind, actionMod, specialAction, condition)
 				--this:DebugOutput("[HandleSpecialActionOnEvent] actionKind = %s, actionMod = %s, specialAction = %s, specialAction.ActionContext = %s", actionKind, actionMod, tostring(specialAction), tostring(this:QueryTable(specialAction, "ActionContext")));
+				
 				if (not actionKind and not actionMod) then
 					return false;
 				end
@@ -991,7 +1022,19 @@ function WeaponMovesetController(_param1, _param2)
 				
 				if (actionMod) then
 					if (CheckExtraCondition()) then
-						if (actionKind and (actionKind ~= WeaponMovesetActionKind.TransformWeaponLeft and actionKind ~= WeaponMovesetActionKind.TransformWeaponRight)) then
+						local function ShouldIgnoreAction()
+							return this:AnyOf(
+							{
+								WeaponMovesetActionKind.TransformWeaponLeft,
+								WeaponMovesetActionKind.TransformWeaponRight,
+								WeaponMovesetActionKind.TransformWeaponL1,
+								WeaponMovesetActionKind.TransformWeaponL2,
+								WeaponMovesetActionKind.TransformWeaponR1,
+								WeaponMovesetActionKind.TransformWeaponR2,
+							}, actionKind);
+						end
+						
+						if (actionKind and not ShouldIgnoreAction()) then
 							if (not command or env(ActionDuration, command) <= 0) then
 								actionMod = nil;
 								g_WeaponMovesetController.SpecialAction:SetMod(nil);
@@ -1027,17 +1070,34 @@ function WeaponMovesetController(_param1, _param2)
 					
 					if (this:CanInvokeAction(actionKind, actionContext) and CheckExtraCondition()) then
 						local bypassInputCheck = false;
+						local duration = nil;
 						if (actionKind == WeaponMovesetActionKind.TransformWeaponLeft or actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
 							bypassInputCheck = true;
+							
+							if (actionKind == WeaponMovesetActionKind.TransformWeaponRight) then
+								duration = math.max(env(ActionDuration, ACTION_ARM_R1), env(ActionDuration, ACTION_ARM_R2));
+							elseif (actionKind == WeaponMovesetActionKind.TransformWeaponLeft) then
+								duration = math.max(env(ActionDuration, ACTION_ARM_L1), env(ActionDuration, ACTION_ARM_L2));
+							end
+						elseif (actionKind == WeaponMovesetActionKind.TransformWeaponL1) then
+							command = ACTION_ARM_L1;
+						elseif (actionKind == WeaponMovesetActionKind.TransformWeaponL2) then
+							command = ACTION_ARM_L2;
+						elseif (actionKind == WeaponMovesetActionKind.TransformWeaponR1) then
+							command = ACTION_ARM_R1;
+						elseif (actionKind == WeaponMovesetActionKind.TransformWeaponR2) then
+							command = ACTION_ARM_R2;
 						end
 						
 						if (bypassInputCheck or (command and (env(ActionRequest, command) == TRUE or env(ActionDuration, command) > 0))) then
 							if (specialAction) then
 								specialAction:SetKind(actionKind);
+								specialAction:SetDuration(duration or env(ActionDuration, command));
 								resultKind = true;
 							else
 								local specialAction = g_WeaponMovesetController.SpecialAction:Clone();
-								specialAction.ActionKind = actionKind;
+								specialAction:SetKind(actionKind);
+								specialAction:SetDuration(duration or env(ActionDuration, command));
 								
 								if (actionContext == WeaponMovesetActionContext.Global and this:ExecuteActionOnGlobal(specialAction)) then
 									return true;
@@ -1058,15 +1118,19 @@ function WeaponMovesetController(_param1, _param2)
 				-- const class SpecialAction& 
 			-- Returns: bool, true if we handled the event, false otherwise
 			ExecuteActionOnGlobal = function(this, specialAction)
-				--this:DebugOutput("[ExecuteActionOnGlobal] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
+				--this:DebugOutput("[ExecuteActionOnGlobal] .ActionKind: %s, .ActionMod = %s, .ActionDuration = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, tostring(specialAction.ActionDuration), specialAction.ActionContext);
 				
-				-- We always have special action here
+				local weaponCategory = this.WeaponCategory;
+				local movesetOverride = this.MovesetOverride;
+				
+				-- We always have a special action here
 				local actionKind = specialAction.ActionKind;
 				local actionMod = specialAction.ActionMod;
+				local actionDuration = specialAction.ActionDuration;
 				local actionContext = specialAction.ActionContext;
 				
-				if (this:IsMagicTranslationActive()) then
-					if (actionMod == WeaponMovesetActionMod.EventAction and actionKind == WeaponMovesetActionKind.TransformWeaponLeft) then
+				if (actionMod and actionMod == WeaponMovesetActionMod.EventAction) then
+					if (actionKind == WeaponMovesetActionKind.TransformWeaponL1 and this:IsMagicTranslationActive()) then
 						-- In general, any result of ExecMagicTranslation is a reason to interrupt any event that called us, since we don't want
 						-- things like being out of stamina to play the usual action. The only way that should happen if we aren't two-handing or
 						-- the opposite hand weapon isn't a valid spell catalyst. This case we treat as a deliberate intent to not have the spell
@@ -1512,7 +1576,7 @@ function WeaponMovesetController(_param1, _param2)
 						local actionKind = specialAction.ActionKind;
 						local actionMod = specialAction.ActionMod;
 						
-						if (actionMod == WeaponMovesetActionMod.EventAction and actionKind == WeaponMovesetActionKind.TransformWeaponLeft) then
+						if (actionMod == WeaponMovesetActionMod.EventAction and actionKind == WeaponMovesetActionKind.TransformWeaponL1) then
 							return this:ExecMagicTranslation(nil, nil, jumpKind);
 						end
 					end
@@ -2168,7 +2232,7 @@ function WeaponMovesetController(_param1, _param2)
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride) or movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						if (this:IsNetworkCompatibilityEnabled()) then
 							if (actionContext == WeaponMovesetActionContext.Global) then
-								return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
+								return this:IsMagicTranslationActive() and actionKind == WeaponMovesetActionKind.TransformWeaponL1;
 							end
 						else
 							if (actionContext == WeaponMovesetActionContext.OnGuard) then
@@ -2183,13 +2247,19 @@ function WeaponMovesetController(_param1, _param2)
 								return actionKind == WeaponMovesetActionKind.EventAction;
 							elseif (actionContext == WeaponMovesetActionContext.Global) then
 								if (this:IsMagicTranslationActive()) then
-									return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
+									return actionKind == WeaponMovesetActionKind.TransformWeaponL1 or actionKind == WeaponMovesetActionKind.TransformWeaponL2;
+								else
+									return actionKind == WeaponMovesetActionKind.TransformWeaponL2;
 								end
 							end
 						end
 					elseif (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
-						if (this:IsMagicTranslationActive() and actionContext == WeaponMovesetActionContext.Global) then
-							return actionKind == WeaponMovesetActionKind.TransformWeaponLeft;
+						if (actionContext == WeaponMovesetActionContext.Global) then
+							if (this:IsMagicTranslationActive()) then
+								return actionKind == WeaponMovesetActionKind.TransformWeaponL1 or actionKind == WeaponMovesetActionKind.TransformWeaponL2;
+							else
+								return actionKind == WeaponMovesetActionKind.TransformWeaponL2;
+							end
 						end
 					end
 				end
@@ -2299,6 +2369,7 @@ function WeaponMoveset_SpecialAction(actionContext)
 				local clone = WeaponMoveset_SpecialAction(this.ActionContext);
 				clone.ActionKind = this.ActionKind;
 				clone.ActionMod = this.ActionMod;
+				clone.ActionDuration = this.ActionDuration;
 				
 				return clone;
 			end,
@@ -2319,6 +2390,15 @@ function WeaponMoveset_SpecialAction(actionContext)
 			-- Returns: void
 			SetMod = function(this, actionMod)
 				this.ActionMod = actionMod;
+			end,
+			
+			-- Sets the action duration
+			--
+			-- Parameters:
+				-- int actionDuration
+			-- Returns: void
+			SetDuration = function(this, actionDuration)
+				this.ActionDuration = actionDuration;
 			end,
 			
 			-- Sets the action context
@@ -6942,6 +7022,9 @@ function ExecWeaponChange(blend_type, specialAction)
 		end
 		return TRUE;
 	end
+	local function TryEvent(actionKind)
+		return weaponMovesetController:HandleSpecialActionOnEvent(actionKind, WeaponMovesetActionMod.EventAction, specialAction);
+	end
 	
     if env(ActionRequest, ACTION_ARM_R1) == TRUE or env(ActionRequest, ACTION_ARM_R2) == TRUE then
         if env(ActionDuration, ACTION_ARM_ACTION) > 0 then
@@ -6950,7 +7033,7 @@ function ExecWeaponChange(blend_type, specialAction)
             HandChangeTest_ToL1 = FALSE
             HandChangeTest_ToL2 = FALSE
 			
-			if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.TransformWeaponRight, WeaponMovesetActionMod.EventAction, specialAction)) then
+			if (TryEvent(WeaponMovesetActionKind.TransformWeaponR1) or TryEvent(WeaponMovesetActionKind.TransformWeaponR2) or TryEvent(WeaponMovesetActionKind.TransformWeaponRight)) then
 				if (specialAction) then
 					return FALSE;
 				end
@@ -6972,7 +7055,7 @@ function ExecWeaponChange(blend_type, specialAction)
         HandChangeTest_ToL1 = FALSE
         HandChangeTest_ToL2 = FALSE
 		
-		if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.TransformWeaponLeft, WeaponMovesetActionMod.EventAction, specialAction)) then
+		if (TryEvent(WeaponMovesetActionKind.TransformWeaponL1) or TryEvent(WeaponMovesetActionKind.TransformWeaponL2) or TryEvent(WeaponMovesetActionKind.TransformWeaponLeft)) then
 			if (specialAction) then
 				return FALSE;
 			end
@@ -6995,7 +7078,7 @@ function ExecWeaponChange(blend_type, specialAction)
 			end
 			return TRUE;
 		end
-		
+
         kind = GetWeaponChangeType(HAND_RIGHT)
     elseif env(ActionRequest, ACTION_ARM_CHANGE_WEAPON_L) == TRUE then
 		if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.SwitchWeaponLeft, nil, specialAction)) then
@@ -27180,7 +27263,7 @@ end
 function ExecJumpMagic(jump_type)
 	local weaponMovesetController = WeaponMovesetController();
 	local specialAction = weaponMovesetController:CreateSpecialActionIfAvailable(WeaponMovesetActionContext.OnJumpMagic);
-	if (specialAction and weaponMovesetController:ReadActionInputOnEvent(specialAction, WeaponMovesetActionKind.TransformWeaponLeft, WeaponMovesetActionMod.EventAction)) then
+	if (specialAction and weaponMovesetController:ReadActionInputOnEvent(specialAction, WeaponMovesetActionKind.TransformWeaponL1, WeaponMovesetActionMod.EventAction)) then
 		if (weaponMovesetController:TranslateActionOnJumpMagic(jump_type, specialAction)) then
 			return TRUE;
 		end
