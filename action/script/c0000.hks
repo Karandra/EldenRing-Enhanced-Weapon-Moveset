@@ -1141,6 +1141,15 @@ function WeaponMovesetController(_param1, _param2)
 							return false;
 						end
 						return true;
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponL2) then
+						if (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
+							return this:TransformWeaponMoveset(WeaponMovesetOverride.KnightLongsword);
+						elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+							local paramData = this:GetParamData();
+							if (paramData and paramData.ParamRowID == "67520000") then
+								return this:TransformWeaponMoveset(WeaponMovesetOverride.RellanaTwinBlades);
+							end
+						end
 					end
 				end
 				return false;
@@ -2133,7 +2142,74 @@ function WeaponMovesetController(_param1, _param2)
 						dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x105, dataExposer.TYPE.BitField, 7, sorcery);
 						dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x106, dataExposer.TYPE.BitField, 1, incantations);
 					end
-				end				
+				end
+			end,
+			
+			-- Transforms the weapon moveset. Currently only works for Rellana's Twin Blades.
+			-- Parameters:
+				-- WeaponMovesetOverride targetMoveset
+				-- int swordArtsID: desired weapon art, in nil a default option for the target moveset will be selected
+			-- Returns: bool, true if sucessful
+			TransformWeaponMoveset = function(this, targetMoveset, swordArtsID)
+				--this:DebugOutput("[TransformWeaponMoveset] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, targetMoveset = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, targetMoveset);
+				
+				local dataExposer = ScriptDataExposer();
+				if (dataExposer:IsAvailable()) then
+					local weaponCategory = this.WeaponCategory;
+					local movesetOverride = this.MovesetOverride;
+					
+					local paramData = this:GetParamData();
+					if (paramData) then
+						--this:DebugOutput("[TransformWeaponMoveset/GetParamData] {ParamRowID = %s, UpgradeLevel = %s}", paramData.ParamRowID, paramData.UpgradeLevel);
+						
+						if (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
+							if (targetMoveset == WeaponMovesetOverride.RellanaTwinBlades) then
+								-- Behavior Variation ID -> Rellana's Twin Blades
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x4, dataExposer.TYPE.UInt32, nil, 6701);
+								
+								-- Special Motion Category -> Rellana's Twin Blades
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0xee, dataExposer.TYPE.UInt32, nil, WeaponMovesetOverride.RellanaTwinBlades);
+								
+								-- Weapon Motion Position 2H -> Straight Sword
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0xf1, dataExposer.TYPE.UInt8, nil, 3);
+								
+								-- Weapon Sheath Position ID -> Rellana's Twin Blades
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x174, dataExposer.TYPE.UInt32, nil, 261);
+								
+								-- Is Dual Weapon -> true
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x17c, dataExposer.TYPE.UInt8, 1, 1);
+								
+								-- Sword Arts Param ID -> Moon-and-Fire Stance
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x198, dataExposer.TYPE.UInt32, nil, swordArtsID or 5170);
+								
+								ExecHandChange(this.WeaponHand, TRUE, ALLBODY, FALSE);
+								return true;
+							elseif (targetMoveset == WeaponMovesetOverride.KnightLongsword) then
+								-- Behavior Variation ID -> Knight's Longsword
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x4, dataExposer.TYPE.UInt32, nil, 6710);
+								
+								-- Special Motion Category -> Knight's Longsword
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0xee, dataExposer.TYPE.UInt32, nil, WeaponMovesetOverride.KnightLongsword);
+								
+								-- Weapon Motion Position 2H -> Knight's Longsword
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0xf1, dataExposer.TYPE.UInt8, nil, 18);
+								
+								-- Weapon Sheath Position ID -> Rellana's Moon Sword
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x174, dataExposer.TYPE.UInt32, nil, 262);
+								
+								-- Is Dual Weapon -> false
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x17c, dataExposer.TYPE.UInt8, 1, 0);
+								
+								-- Sword Arts Param ID -> Carian Sovereignty
+								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x198, dataExposer.TYPE.UInt32, nil, swordArtsID or 4180);
+								
+								ExecHandChange(this.WeaponHand, TRUE, ALLBODY, FALSE);
+								return true;
+							end
+						end
+					end
+				end
+				return false;
 			end,
 			
 			-- Controls the access to env(IsSpecialTransitionPossible) inside ExecAttack.
@@ -2695,6 +2771,7 @@ function ScriptDataExposer()
 				-- int offset
 				-- TYPE valueType
 				-- int bitOffset
+				-- any value
 			-- Returns: void
 			SetParamValue = function(this, param, row, offset, valueType, bitOffset, value)
 				-- args <param type>, <row>, <offset>, <value type>, <value>, <bitOffset>
