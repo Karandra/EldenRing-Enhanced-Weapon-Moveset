@@ -95,6 +95,9 @@ function GetMovesetOverride(hand)
 	end
 	return nil;
 end
+function IsHKSDataExposerAvailable()
+	return type(HKSDataExposer) == "table";
+end
 
 -- Enums
 local WeaponMovesetCategory =
@@ -129,7 +132,8 @@ local WeaponMovesetActionKind =
 	None = 0,
 
 	-- Unique
-	-- Disables the standard action if set 
+	-- Disables the standard action if set (if there's any)
+	TransformWeapon = 5,
 	TransformWeaponLeft = 10,
 	TransformWeaponL1 = 11,
 	TransformWeaponL2 = 12,
@@ -399,12 +403,22 @@ function WeaponMovesetController(_param1, _param2)
 						local file = io.open(logFileName, logFileMode);
 						if (file) then
 							local version = _VERSION;
+							local libraries;
 							if (version == "$release r$build") then
 								-- No valid _VERSION present, assuming Lua 5.1 (tested)
-								version = "Lua 5.1";
+								version = "Feature Level: Lua 5.1";
+							end
+							if (IsHKSDataExposerAvailable()) then
+								libraries = "HKSDataExposer: " .. HKSDataExposer.GetVersion();
 							end
 							
-							file:write(string.format("[%s] [Logger] c0000.hks.log opened, Running HavokScript %s\n", FormatDateTime(), version));
+							if (libraries) then
+								libraries = string.format("; Loaded libraries: (%s)", libraries);
+							else
+								libraries = "";
+							end
+							
+							file:write(string.format("[%s] [Logger] c0000.hks.log opened, Running HavokScript (%s)%s\n", FormatDateTime(), version, libraries));
 							file:flush();
 							
 							this.LogFile = file;
@@ -501,23 +515,17 @@ function WeaponMovesetController(_param1, _param2)
 				-- Send weapon change notification
 				local activeWeaponLeft = WeaponMovesetController(HAND_LEFT);
 				if (not activeWeaponLeft:IsSameAs(this.ActiveWeaponLeft)) then
-					if (activeWeaponLeft:IsMagicTranslationEnabled()) then
-						activeWeaponLeft:GetParamData();
-					end
-					
 					local previousWeapon = this.ActiveWeaponLeft;
 					this.ActiveWeaponLeft = activeWeaponLeft;
+					
 					this:OnWeaponChanged(HAND_LEFT, previousWeapon, activeWeaponLeft);
 				end
 				
 				local activeWeaponRight = WeaponMovesetController(HAND_RIGHT);
 				if (not activeWeaponRight:IsSameAs(this.ActiveWeaponRight)) then
-					if (activeWeaponRight:IsMagicTranslationEnabled()) then
-						activeWeaponRight:GetParamData();
-					end
-					
 					local previousWeapon = this.ActiveWeaponRight;
 					this.ActiveWeaponRight = activeWeaponRight;
+					
 					this:OnWeaponChanged(HAND_RIGHT, previousWeapon, activeWeaponRight);
 				end
 			end,
@@ -747,7 +755,15 @@ function WeaponMovesetController(_param1, _param2)
 				--this:DebugOutput("[OnWeaponChanged] hand = %s, fromWeapon{WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, toWeapon{WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, c_Style = %s", hand, fromWeapon.WeaponCategory, fromWeapon.MovesetOverride, fromWeapon.WeaponHand, toWeapon.WeaponCategory, toWeapon.MovesetOverride, toWeapon.WeaponHand, c_Style);
 				
 				local style = c_Style;
-				if (fromWeapon:IsSameAs(toWeapon)) then
+				
+				-- The case of loading into a game when the player is already two-handing a compatible weapon
+				if ((not fromWeapon or fromWeapon:IsNull()) and toWeapon:IsMagicTranslationEnabled() and (style == HAND_LEFT_BOTH or style == HAND_RIGHT_BOTH)) then
+					if (style == HAND_LEFT_BOTH) then
+						toWeapon:OnWeaponHandStyleChanged(HAND_LEFT, style);
+					else
+						toWeapon:OnWeaponHandStyleChanged(HAND_RIGHT, style);
+					end
+				elseif (not fromWeapon or fromWeapon:IsSameAs(toWeapon)) then
 					return;
 					
 				-- Reset the weapon if we changed from a weapon with magic translation enabled
@@ -771,14 +787,6 @@ function WeaponMovesetController(_param1, _param2)
 					if (otherWeapon:IsMagicTranslationEnabled()) then
 						otherWeapon:UpdateMagicTranslationUI(false, false);
 					end
-					
-				-- Edge case of loading into a game when the player is already two-handing a compatible weapon
-				elseif (fromWeapon:IsNull() and toWeapon:IsMagicTranslationEnabled() and (style == HAND_LEFT_BOTH or style == HAND_RIGHT_BOTH)) then
-					if (style == HAND_LEFT_BOTH) then
-						toWeapon:OnWeaponHandStyleChanged(HAND_LEFT, style);
-					else
-						toWeapon:OnWeaponHandStyleChanged(HAND_RIGHT, style);
-					end
 				end
 			end,
 			
@@ -791,8 +799,6 @@ function WeaponMovesetController(_param1, _param2)
 						this:Refresh(hand);
 					elseif (hand == -1) then
 						this.SpecialAction = WeaponMoveset_SpecialAction(WeaponMovesetActionContext.Global);
-						this.ActiveWeaponLeft = WeaponMovesetController(HAND_LEFT);
-						this.ActiveWeaponRight = WeaponMovesetController(HAND_RIGHT);
 					end
 				elseif (param1 and param2) then
 					this.WeaponCategory = param1;
@@ -846,58 +852,15 @@ function WeaponMovesetController(_param1, _param2)
 				this.WeaponCategory = GetWeaponCategory(hand);
 				this.MovesetOverride = GetMovesetOverride(hand);
 				
-				return this;
-			end,
-			
-			-- Returns the weapon param data. Results are cached.
-			--
-			-- Parameters:
-				-- int hand: the hand to check weapon for, if nil the active hand should be used
-			-- Returns: struct {string as int .ParamRowID, int .UpgradeLevel}, nil if unavailable
-			GetParamData = function(this)
-				--this:DebugOutput("[GetParamData] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s, ParamData = %s}", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, tostring(this.ParamData));
-				
-				if (not this.WeaponHand or this.WeaponCategory == 0) then
-					return nil;
-				end
-				if (this.ParamData) then
-					return this.ParamData;
-				end
-				
-				local dataExposer = ScriptDataExposer();
-				if (dataExposer:IsAvailable()) then
-					local equipmentSlotIndex = dataExposer:GetArmamentEquipmentSlot(this.WeaponHand);
-					if (not equipmentSlotIndex) then
-						return nil;
-					end
+				if (IsHKSDataExposerAvailable()) then
+					local slot = HKSDataExposer.GetActiveArmamentEquipmentSlot(hand);
+					local rowID, upgradeLevel = HKSDataExposer.GetActiveArmamentParamRowID(hand, slot);
 					
-					local rowID = dataExposer:GetArmamentParamRowID(this.WeaponHand, equipmentSlotIndex);
-					if (rowID and rowID ~= "0") then
-						-- Since Lua's numbers are limited to float precision and lots of param rows are quite large numbers,
-						-- we can't use math.modf to get the base row number, we'll have to use string manipulation.
-						
-						-- Catpute the last two chracters of the id string and convert them to number (safe in this case, max
-						-- number it could be is 99). Then replace the capture with zeroes to get a base row ID.
-						local upgradeLevel = nil;
-						local baseRowID = string.gsub(rowID, "(%d%d)$", function(capture)
-							upgradeLevel = tonumber(capture);
-							return string.rep("0", #capture);
-						end);
-						
-						if (upgradeLevel) then
-							local result =
-							{
-								ParamRowID = baseRowID,
-								UpgradeLevel = upgradeLevel
-							};
-							this.ParamData = result;
-							--this:DebugOutput("[GetParamData] {ParamRowID = %s, UpgradeLevel = %s}", baseRowID, upgradeLevel);
-							
-							return result;
-						end
-					end
+					this.ParamRowID = rowID;
+					this.UpgradeLevel = upgradeLevel;
 				end
-				return nil;
+				
+				return this;
 			end,
 			
 			-- Reads input for the provided action. Supposed to be used to detect input on your own when
@@ -946,6 +909,12 @@ function WeaponMovesetController(_param1, _param2)
 				
 				if (actionKind) then
 					local command = this:TranslateActionCommand(actionKind);
+					
+					-- Special case, map TransformWeapon to Jump
+					if (not command and actionKind == WeaponMovesetActionKind.TransformWeapon) then
+						command = this:TranslateActionCommand(WeaponMovesetActionKind.Jump);
+					end
+					
 					if (command and (env(ActionRequest, command) == TRUE or env(ActionDuration, command) > 0)) then
 						specialAction.ActionKind = actionKind;
 						specialAction.ActionDuration = env(ActionDuration, command);
@@ -1141,12 +1110,11 @@ function WeaponMovesetController(_param1, _param2)
 							return false;
 						end
 						return true;
-					elseif (actionKind == WeaponMovesetActionKind.TransformWeaponL2) then
+					elseif (actionKind == WeaponMovesetActionKind.TransformWeapon) then
 						if (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
 							return this:TransformWeaponMoveset(WeaponMovesetOverride.KnightLongsword);
 						elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
-							local paramData = this:GetParamData();
-							if (paramData and paramData.ParamRowID == "67520000") then
+							if (this.ParamRowID == "67540000") then
 								return this:TransformWeaponMoveset(WeaponMovesetOverride.RellanaTwinBlades);
 							end
 						end
@@ -1905,14 +1873,14 @@ function WeaponMovesetController(_param1, _param2)
 						return magic_index == 254 or magic_index == 255;
 					end
 					
-					act(DecideMagicUse)
-					
-					local dataExposer = ScriptDataExposer();
-					if (not dataExposer:IsAvailable()) then
-						return false, MagicTranslationStatus.ScriptDataExposerRequired;
+					if (IsHKSDataExposerAvailable()) then
+						HKSDataExposer.UpdateMagicID();
+					else
+						-- Try to fallback to Scripts-Data-Exposer-FS
+						act(10002);
 					end
-					dataExposer.UpdateMagicIndex();
-					act(NotifyAIMagicCast)
+					act(DecideMagicUse);
+					act(NotifyAIMagicCast);
 					
 					if (jumpKind) then
 						if (IsJumpMagic() == FALSE and IsQuickMagic() == FALSE) then
@@ -1994,6 +1962,9 @@ function WeaponMovesetController(_param1, _param2)
 						if (ShouldRotateWeapon(magic_index)) then
 							SetVariable("Magic_SpecialStaffCategory", 2);
 						elseif (magic_index == 141 or magic_index == 128 or magic_index == 146) then
+							-- 128: Minor Erdtree
+							-- 141: Messmer's Orb
+							-- 146: Spira
 							if (movesetOverride == WeaponMovesetOverride.StaffOfTheGreatBeyond) then
 								SetVariable("Magic_SpecialStaffCategory", 1);
 							else
@@ -2077,6 +2048,8 @@ function WeaponMovesetController(_param1, _param2)
 						end
 						return false;
 					else
+						-- 127: Miriam's Vanishing
+						-- 19975: [Sorcery] Miriam's Vanishing; Duration 2.0s
 						if (magic_index == 127 and env(GetSpEffectID, 19975) == TRUE) then
 							return true;
 						end
@@ -2125,87 +2098,37 @@ function WeaponMovesetController(_param1, _param2)
 			UpdateMagicTranslationUI = function(this, enableSorcery, enableIncantations)
 				--this:DebugOutput("[UpdateMagicTranslationUI] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, enableSorcery = %s, enableIncantations = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, tostring(enableSorcery), tostring(enableIncantations));
 				
-				local dataExposer = ScriptDataExposer();
-				if (dataExposer:IsAvailable()) then
-					local paramData = this:GetParamData();
-					if (paramData) then
-						-- Bools aren't supported by the data exposer API, so turn them into ints
-						local sorcery = 0;
-						local incantations = 0;
-						if (enableSorcery) then
-							sorcery = 1;
-						end
-						if (enableIncantations) then
-							incantations = 1;
-						end
-						
-						dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x105, dataExposer.TYPE.BitField, 7, sorcery);
-						dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x106, dataExposer.TYPE.BitField, 1, incantations);
-					end
+				if (IsHKSDataExposerAvailable()) then
+					local EParam = HKSDataExposer.EParam;
+					local rowID = this.ParamRowID;
+					
+					HKSDataExposer.WriteParam(
+					{
+						{Param = EParam.EquipParamWeapon, Row = rowID, Offset = 0x105, Type = "bit", BitOffset = 7, Value = enableSorcery},
+						{Param = EParam.EquipParamWeapon, Row = rowID, Offset = 0x106, Type = "bit", BitOffset = 1, Value = enableIncantations}
+					});
 				end
 			end,
 			
 			-- Transforms the weapon moveset. Currently only works for Rellana's Twin Blades.
 			-- Parameters:
 				-- WeaponMovesetOverride targetMoveset
-				-- int swordArtsID: desired weapon art, in nil a default option for the target moveset will be selected
 			-- Returns: bool, true if sucessful
-			TransformWeaponMoveset = function(this, targetMoveset, swordArtsID)
-				--this:DebugOutput("[TransformWeaponMoveset] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, targetMoveset = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, targetMoveset);
+			TransformWeaponMoveset = function(this, targetMoveset)
+				this:DebugOutput("[TransformWeaponMoveset] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, targetMoveset = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, targetMoveset);
 				
-				local dataExposer = ScriptDataExposer();
-				if (dataExposer:IsAvailable()) then
+				if (IsHKSDataExposerAvailable()) then
+					local weaponHand = this.WeaponHand;
 					local weaponCategory = this.WeaponCategory;
 					local movesetOverride = this.MovesetOverride;
 					
-					local paramData = this:GetParamData();
-					if (paramData) then
-						--this:DebugOutput("[TransformWeaponMoveset/GetParamData] {ParamRowID = %s, UpgradeLevel = %s}", paramData.ParamRowID, paramData.UpgradeLevel);
-						
-						if (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
-							if (targetMoveset == WeaponMovesetOverride.RellanaTwinBlades) then
-								-- Behavior Variation ID -> Rellana's Twin Blades
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x4, dataExposer.TYPE.UInt32, nil, 6701);
-								
-								-- Special Motion Category -> Rellana's Twin Blades
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0xee, dataExposer.TYPE.UInt32, nil, WeaponMovesetOverride.RellanaTwinBlades);
-								
-								-- Weapon Motion Position 2H -> Straight Sword
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0xf1, dataExposer.TYPE.UInt8, nil, 3);
-								
-								-- Weapon Sheath Position ID -> Rellana's Twin Blades
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x174, dataExposer.TYPE.UInt32, nil, 261);
-								
-								-- Is Dual Weapon -> true
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x17c, dataExposer.TYPE.UInt8, 1, 1);
-								
-								-- Sword Arts Param ID -> Moon-and-Fire Stance
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x198, dataExposer.TYPE.UInt32, nil, swordArtsID or 5170);
-								
-								ExecHandChange(this.WeaponHand, TRUE, ALLBODY, FALSE);
-								return true;
-							elseif (targetMoveset == WeaponMovesetOverride.KnightLongsword) then
-								-- Behavior Variation ID -> Knight's Longsword
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x4, dataExposer.TYPE.UInt32, nil, 6710);
-								
-								-- Special Motion Category -> Knight's Longsword
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0xee, dataExposer.TYPE.UInt32, nil, WeaponMovesetOverride.KnightLongsword);
-								
-								-- Weapon Motion Position 2H -> Knight's Longsword
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0xf1, dataExposer.TYPE.UInt8, nil, 18);
-								
-								-- Weapon Sheath Position ID -> Rellana's Moon Sword
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x174, dataExposer.TYPE.UInt32, nil, 262);
-								
-								-- Is Dual Weapon -> false
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x17c, dataExposer.TYPE.UInt8, 1, 0);
-								
-								-- Sword Arts Param ID -> Carian Sovereignty
-								dataExposer:SetParamValue(dataExposer.PARAM.EquipParamWeapon, paramData.ParamRowID, 0x198, dataExposer.TYPE.UInt32, nil, swordArtsID or 4180);
-								
-								ExecHandChange(this.WeaponHand, TRUE, ALLBODY, FALSE);
-								return true;
-							end
+					if (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
+						if (targetMoveset == WeaponMovesetOverride.RellanaTwinBlades) then
+							HKSDataExposer.TransformWeapon(weaponHand, "67520000");
+							return true;
+						elseif (targetMoveset == WeaponMovesetOverride.KnightLongsword) then
+							HKSDataExposer.TransformWeapon(weaponHand, "67540000");
+							return true;
 						end
 					end
 				end
@@ -2323,18 +2246,18 @@ function WeaponMovesetController(_param1, _param2)
 								return actionKind == WeaponMovesetActionKind.EventAction;
 							elseif (actionContext == WeaponMovesetActionContext.Global) then
 								if (this:IsMagicTranslationActive()) then
-									return actionKind == WeaponMovesetActionKind.TransformWeaponL1 or actionKind == WeaponMovesetActionKind.TransformWeaponL2;
+									return actionKind == WeaponMovesetActionKind.TransformWeaponL1 or actionKind == WeaponMovesetActionKind.TransformWeapon;
 								else
-									return actionKind == WeaponMovesetActionKind.TransformWeaponL2;
+									return actionKind == WeaponMovesetActionKind.TransformWeapon;
 								end
 							end
 						end
 					elseif (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
 						if (actionContext == WeaponMovesetActionContext.Global) then
 							if (this:IsMagicTranslationActive()) then
-								return actionKind == WeaponMovesetActionKind.TransformWeaponL1 or actionKind == WeaponMovesetActionKind.TransformWeaponL2;
+								return actionKind == WeaponMovesetActionKind.TransformWeaponL1 or actionKind == WeaponMovesetActionKind.TransformWeapon;
 							else
-								return actionKind == WeaponMovesetActionKind.TransformWeaponL2;
+								return actionKind == WeaponMovesetActionKind.TransformWeapon;
 							end
 						end
 					end
@@ -2491,346 +2414,6 @@ function WeaponMoveset_SpecialAction(actionContext)
 	{
 		__index = vtbl
 	});
-end
-
-function ScriptDataExposer()
-	local PARAM =
-	{
-		EquipParamWeapon = 0,
-		EquipParamProtector = 1,
-		EquipParamAccessory = 2,
-		EquipParamGoods = 3,
-		ReinforceParamWeapon = 4,
-		ReinforceParamProtector = 5,
-		NpcParam = 6,
-		AtkParam_Npc = 7,
-		AtkParam_Pc = 8,
-		NpcThinkParam = 9,
-		Bullet = 10,
-		BulletCreateLimitParam = 11,
-		BehaviorParam = 12,
-		BehaviorParam_PC = 13,
-		Magic = 14,
-		SpEffectParam = 15,
-		SpEffectVfxParam = 16,
-		SpEffectSetParam = 17,
-		TalkParam = 18,
-		MenuColorTableParam = 19,
-		ItemLotParam_enemy = 20,
-		ItemLotParam_map = 21,
-		MoveParam = 22,
-		CharaInitParam = 23,
-		EquipMtrlSetParam = 24,
-		FaceParam = 25,
-		FaceRangeParam = 26,
-		ShopLineupParam = 27,
-		ShopLineupParam_Recipe = 28,
-		GameAreaParam = 29,
-		CalcCorrectGraph = 30,
-		LockCamParam = 31,
-		ObjActParam = 32,
-		HitMtrlParam = 33,
-		KnockBackParam = 34,
-		DecalParam = 35,
-		ActionButtonParam = 36,
-		AiSoundParam = 37,
-		PlayRegionParam = 38,
-		NetworkAreaParam = 39,
-		NetworkParam = 40,
-		NetworkMsgParam = 41,
-		BudgetParam = 42,
-		BonfireWarpParam = 43,
-		BonfireWarpTabParam = 44,
-		BonfireWarpSubCategoryParam = 45,
-		MenuPropertySpecParam = 46,
-		MenuPropertyLayoutParam = 47,
-		MenuValueTableParam = 48,
-		Ceremony = 49,
-		PhantomParam = 50,
-		CharMakeMenuTopParam = 51,
-		CharMakeMenuListItemParam = 52,
-		HitEffectSfxConceptParam = 53,
-		HitEffectSfxParam = 54,
-		WepAbsorpPosParam = 55,
-		ToughnessParam = 56,
-		SeMaterialConvertParam = 57,
-		ThrowDirectionSfxParam = 58,
-		DirectionCameraParam = 59,
-		RoleParam = 60,
-		WaypointParam = 61,
-		ThrowParam = 62,
-		GrassTypeParam = 63,
-		GrassTypeParam_Lv1 = 64,
-		GrassTypeParam_Lv2 = 65,
-		GrassLodRangeParam = 66,
-		NpcAiActionParam = 67,
-		PartsDrawParam = 68,
-		AssetEnvironmentGeometryParam = 69,
-		AssetModelSfxParam = 70,
-		AssetMaterialSfxParam = 71,
-		AttackElementCorrectParam = 72,
-		FootSfxParam = 73,
-		MaterialExParam = 74,
-		HPEstusFlaskRecoveryParam = 75,
-		MPEstusFlaskRecoveryParam = 76,
-		MultiPlayCorrectionParam = 77,
-		MenuOffscrRendParam = 78,
-		ClearCountCorrectParam = 79,
-		MapMimicryEstablishmentParam = 80,
-		WetAspectParam = 81,
-		SwordArtsParam = 82,
-		KnowledgeLoadScreenItemParam = 83,
-		MultiHPEstusFlaskBonusParam = 84,
-		MultiMPEstusFlaskBonusParam = 85,
-		MultiSoulBonusRateParam = 86,
-		WorldMapPointParam = 87,
-		WorldMapPieceParam = 88,
-		WorldMapLegacyConvParam = 89,
-		WorldMapPlaceNameParam = 90,
-		ChrModelParam = 91,
-		LoadBalancerParam = 92,
-		LoadBalancerDrawDistScaleParam = 93,
-		LoadBalancerDrawDistScaleParam_ps4 = 94,
-		LoadBalancerDrawDistScaleParam_ps5 = 95,
-		LoadBalancerDrawDistScaleParam_xb1 = 96,
-		LoadBalancerDrawDistScaleParam_xb1x = 97,
-		LoadBalancerDrawDistScaleParam_xss = 98,
-		LoadBalancerDrawDistScaleParam_xsx = 99,
-		LoadBalancerNewDrawDistScaleParam_win64 = 100,
-		LoadBalancerNewDrawDistScaleParam_ps4 = 101,
-		LoadBalancerNewDrawDistScaleParam_ps5 = 102,
-		LoadBalancerNewDrawDistScaleParam_xb1 = 103,
-		LoadBalancerNewDrawDistScaleParam_xb1x = 104,
-		LoadBalancerNewDrawDistScaleParam_xss = 105,
-		LoadBalancerNewDrawDistScaleParam_xsx = 106,
-		WwiseValueToStrParam_Switch_AttackType = 107,
-		WwiseValueToStrParam_Switch_DamageAmount = 108,
-		WwiseValueToStrParam_Switch_DeffensiveMaterial = 109,
-		WwiseValueToStrParam_Switch_HitStop = 110,
-		WwiseValueToStrParam_Switch_OffensiveMaterial = 111,
-		WwiseValueToStrParam_Switch_GrassHitType = 112,
-		WwiseValueToStrParam_Switch_PlayerShoes = 113,
-		WwiseValueToStrParam_Switch_PlayerEquipmentTops = 114,
-		WwiseValueToStrParam_Switch_PlayerEquipmentBottoms = 115,
-		WwiseValueToStrParam_Switch_PlayerVoiceType = 116,
-		WwiseValueToStrParam_Switch_AttackStrength = 117,
-		WwiseValueToStrParam_EnvPlaceType = 118,
-		WeatherParam = 119,
-		WeatherLotParam = 120,
-		WeatherAssetCreateParam = 121,
-		WeatherAssetReplaceParam = 122,
-		SpeedtreeParam = 123,
-		RideParam = 124,
-		SeActivationRangeParam = 125,
-		RollingObjLotParam = 126,
-		NpcAiBehaviorProbability = 127,
-		BuddyParam = 128,
-		GparamRefSettings = 129,
-		RandomAppearParam = 130,
-		MapGridCreateHeightLimitInfoParam = 131,
-		EnvObjLotParam = 132,
-		MapDefaultInfoParam = 133,
-		BuddyStoneParam = 134,
-		LegacyDistantViewPartsReplaceParam = 135,
-		SoundCommonIngameParam = 136,
-		SoundAutoEnvSoundGroupParam = 137,
-		SoundAutoReverbEvaluationDistParam = 138,
-		SoundAutoReverbSelectParam = 139,
-		EnemyCommonParam = 140,
-		GameSystemCommonParam = 141,
-		GraphicsCommonParam = 142,
-		MenuCommonParam = 143,
-		PlayerCommonParam = 144,
-		CutsceneGparamWeatherParam = 145,
-		CutsceneGparamTimeParam = 146,
-		CutsceneTimezoneConvertParam = 147,
-		CutsceneWeatherOverrideGparamConvertParam = 148,
-		SoundCutsceneParam = 149,
-		ChrActivateConditionParam = 150,
-		CutsceneMapIdParam = 151,
-		CutSceneTextureLoadParam = 152,
-		GestureParam = 153,
-		EquipParamGem = 154,
-		EquipParamCustomWeapon = 155,
-		GraphicsConfig = 156,
-		SoundChrPhysicsSeParam = 157,
-		FeTextEffectParam = 158,
-		CoolTimeParam = 159,
-		WhiteSignCoolTimeParam = 160,
-		MapPieceTexParam = 161,
-		MapNameTexParam = 162,
-		WeatherLotTexParam = 163,
-		KeyAssignParam_TypeA = 164,
-		KeyAssignParam_TypeB = 165,
-		KeyAssignParam_TypeC = 166,
-		MapGdRegionInfoParam = 167,
-		MapGdRegionDrawParam = 168,
-		KeyAssignMenuItemParam = 169,
-		SoundAssetSoundObjEnableDistParam = 170,
-		SignPuddleParam = 171,
-		AutoCreateEnvSoundParam = 172,
-		WwiseValueToStrParam_BgmBossChrIdConv = 173,
-		ResistCorrectParam = 174,
-		PostureControlParam_WepRight = 175,
-		PostureControlParam_WepLeft = 176,
-		PostureControlParam_Gender = 177,
-		PostureControlParam_Pro = 178,
-		RuntimeBoneControlParam = 179,
-		TutorialParam = 180,
-		BaseChrSelectMenuParam = 181,
-		MimicryEstablishmentTexParam = 182,
-		SfxBlockResShareParam = 183,
-		FinalDamageRateParam = 184,
-		HitEffectSeParam = 185
-	};
-	local TYPE =
-	{
-		Int8 = 1,
-		Int16 = 3,
-		Int32 = 5,
-		UInt8 = 0,
-		UInt16 = 2,
-		UInt32 = 4,
-		Float = 6,
-		BitField = 7
-	};
-	
-	local ACTION =
-	{
-		TraversePointerChain = 10000,
-		UpdateMagicIdToActive = 10002,
-		AccessParam = 10004
-	};
-	local OFFSET =
-	{
-		GAME_BASE = 0,
-		GAME_DATA_MAN = 0x3d61f98,
-		GAME_CHR_MAN = 0x3d69ff8,
-	};
-
-	local vtbl =
-	{
-		-- public [static]:
-			PARAM = PARAM,
-			TYPE = TYPE,
-			ACTION = ACTION,
-			OFFSET = OFFSET,
-			
-		-- private:
-			-- Read data from the game data manager
-			--
-			-- Parameters:
-				-- int argCount: the required parameter count, the function fails if given less than that
-				-- vararg: offsets
-			-- Returns: any, nil on error
-			ReadGameData = function(this, argCount, ...)
-				local args = {select(1, ...)};
-				if (#args >= argCount) then
-					return safe_env(ACTION.TraversePointerChain, OFFSET.GAME_BASE, TYPE.UInt32, OFFSET.GAME_DATA_MAN, ...);
-				end
-				return nil;
-			end,
-			
-		-- public:
-			ScriptDataExposer = function(this)
-			end,
-	
-		-- public:
-			-- Updates the player's magic module id to the equipped magic slot, allowing the proper usage of magic with irregular methods.
-			--
-			-- Returns: void
-			IsAvailable = function(this)
-				-- TODO: Figure out how to check for it
-				return safe_env ~= nil;
-			end,
-			
-			UpdateMagicIndex = function(this)
-				act(ACTION.UpdateMagicIdToActive);
-				act(DecideMagicUse); --UpdateMagicIndexToMagicId
-			end,
-			
-			-- Read a param value. The bitOffset only used if value type is TYPE.BitField.
-			--
-			-- Parameters:
-				-- PARAM param
-				-- int row
-				-- int offset
-				-- TYPE valueType
-				-- int bitOffset
-			-- Returns: void
-			GetParamValue = function(this, param, row, offset, valueType, bitOffset)
-				-- args <param type>, <row>, <offset>, <value type>, <bitOffset/pointer offset1>, <pointer offsets...>
-				return safe_env(ACTION.AccessParam, param, row, offset, valueType, bitOffset);
-			end,
-			
-			-- Write a param value. The offset only used if value type is TYPE.BitField.
-			--
-			-- Parameters:
-				-- PARAM param
-				-- int row
-				-- int offset
-				-- TYPE valueType
-				-- int bitOffset
-				-- any value
-			-- Returns: void
-			SetParamValue = function(this, param, row, offset, valueType, bitOffset, value)
-				-- args <param type>, <row>, <offset>, <value type>, <value>, <bitOffset>
-				return act(ACTION.AccessParam, param, row, offset, valueType, value, bitOffset);
-			end,
-			
-			-- Returns the equipment slot index the current weapon is equipped on
-			--
-			-- Parameters:
-				-- int hand: hand to check the weapon for
-			-- Returns: int: 0 - primary, 1, secondary, 2 - tertiary, nil if invalid
-			GetArmamentEquipmentSlot = function(this, hand)
-				local offset2 = nil;
-				if (hand == HAND_RIGHT) then
-					offset2 = 0x32c;
-				elseif (hand == HAND_LEFT) then
-					offset2 = 0x328;
-				end
-				
-				return tonumber(this:ReadGameData(2, 0x8, offset2));
-			end,
-			
-			-- Returns the armament param row for the given equipment slot index
-			--
-			-- Parameters:
-				-- int hand: hand to check the weapon for
-				-- int equipmentSlot: equipment slot index (see GetArmamentEquipmentSlot)
-			-- Returns: int as string, nil if invalid
-			GetArmamentParamRowID = function(this, hand, equipmentSlot)
-				local offset2 = nil;
-				if (hand == HAND_RIGHT) then
-					if (equipmentSlot == 0) then
-						offset2 = 0x39c;
-					elseif (equipmentSlot == 1) then
-						offset2 = 0x3a4;
-					elseif (equipmentSlot == 2) then
-						offset2 = 0x3ac;
-					end
-				elseif (hand == HAND_LEFT) then
-					if (equipmentSlot == 0) then
-						offset2 = 0x398;
-					elseif (equipmentSlot == 1) then
-						offset2 = 0x3a0;
-					elseif (equipmentSlot == 2) then
-						offset2 = 0x3a8;
-					end
-				end
-				
-				return this:ReadGameData(2, 0x8, offset2);
-			end
-	};
-	
-	local obj = setmetatable({},
-	{
-		__index = vtbl
-	});
-	obj:ScriptDataExposer();
-	
-	return obj;
 end
 
 -- Global WeaponMovesetController object. It handles OnUpdate and everything related to it
@@ -6131,6 +5714,8 @@ function IsUseStealthAttack(is_dual)
 end
 
 function ExecArtsStance(blend_type)
+	--if (true) then return; end
+
     if c_IsEnableSwordArts == FALSE then
         return FALSE
     end
@@ -7219,19 +6804,27 @@ function GetHandChangeType(hand)
 end
 
 function ExecJump(specialAction)
+    -- Note: Restored original value during full remake. Repo values was ACTION_ARM_JUMP instead of ACTION_ARM_CHANGE_STYLE
+    -- note: Original decompile of 1.10 has ACTION_ARM_CHANGE_STYLE instead of jump
+    if env(ActionRequest, ACTION_ARM_CHANGE_STYLE) == FALSE and env(IsAIJumpRequested) == FALSE then
+        return FALSE
+    end
+	
 	local weaponMovesetController = WeaponMovesetController();
 	if (weaponMovesetController:HandleSpecialActionOnEvent(WeaponMovesetActionKind.Jump, nil, specialAction)) then
 		if (specialAction) then
 			return FALSE;
 		end
 		return TRUE;
+	elseif (not specialAction) then
+		local specialAction = WeaponMoveset_SpecialAction(WeaponMovesetActionContext.Global);
+		if (weaponMovesetController:ReadActionInputOnEvent(specialAction, WeaponMovesetActionKind.TransformWeapon, WeaponMovesetActionMod.EventAction)) then
+			if (weaponMovesetController:ExecuteActionOnGlobal(specialAction)) then
+				return TRUE;
+			end
+		end
 	end
-
-    -- Note: Restored original value during full remake. Repo values was ACTION_ARM_JUMP instead of ACTION_ARM_CHANGE_STYLE
-    -- note: Original decompile of 1.10 has ACTION_ARM_CHANGE_STYLE instead of jump
-    if env(ActionRequest, ACTION_ARM_CHANGE_STYLE) == FALSE and env(IsAIJumpRequested) == FALSE then
-        return FALSE
-    end
+	
     if env(GetStamina) <= 0 and env(IsAIJumpRequested) == FALSE then
         ResetRequest()
         return FALSE
