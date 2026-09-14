@@ -1,0 +1,39 @@
+{
+  "Name": "Enhanced Weapon Moveset\\merges\\MSG-Container-Item",
+  "FmgWrappers": [
+    {
+      "Name": "WeaponName_dlc01.fmg",
+      "ID": 310,
+      "Fmg": {
+        "Name": "WeaponName_dlc01.fmg",
+        "Entries": [
+          {
+            "ID": 67540000,
+            "Text": "Rellana\u0027s Moon Sword"
+          }
+        ],
+        "Version": 2,
+        "BigEndian": false,
+        "Unicode": true,
+        "Compression": 1
+      }
+    },
+    {
+      "Name": "WeaponCaption_dlc01.fmg",
+      "ID": 312,
+      "Fmg": {
+        "Name": "WeaponCaption_dlc01.fmg",
+        "Entries": [
+          {
+            "ID": 67540000,
+            "Text": "Carian light greatsword embedded with blue glintstone.\nWeapon of Rellana, the Twin Moon Knight.\n\nHere, and here alone, were moon and fire ever together."
+          }
+        ],
+        "Version": 2,
+        "BigEndian": false,
+        "Unicode": true,
+        "Compression": 1
+      }
+    }
+  ]
+}
