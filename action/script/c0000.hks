@@ -2121,13 +2121,59 @@ function WeaponMovesetController(_param1, _param2)
 					local weaponHand = this.WeaponHand;
 					local weaponCategory = this.WeaponCategory;
 					local movesetOverride = this.MovesetOverride;
+					local style = c_Style;
+					
+					local function ExecHandChangeAnimation(blend_type, no_reset)
+						blend_type = blend_type or ALLBODY;
+						
+						if (blend_type == ALLBODY) then
+							local move_event = Event_Move;
+							if (c_IsStealth == TRUE) then
+								move_event = Event_Stealth_Move;
+							end
+							if (MoveStart(LOWER, move_event, FALSE) == TRUE) then
+								blend_type = UPPER;
+							end
+						end
+						
+						g_WeaponMovesetController.PreviousHandStyle = style;
+						local event = Event_HandChangeStart;
+						if (c_IsStealth == TRUE) then
+							event = Event_StealthHandChangeStart;
+						end
+						if (no_reset) then
+							ExecEventHalfBlendNoReset(event, blend_type);
+						else
+							ExecEventHalfBlend(event, blend_type);
+						end
+						act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+						SetAIActionState();
+						
+						return true;
+					end
 					
 					if (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
 						if (targetMoveset == WeaponMovesetOverride.RellanaTwinBlades) then
 							HKSDataExposer.TransformWeapon(weaponHand, "67520000");
+							if (style == HAND_LEFT_BOTH or style == HAND_RIGHT_BOTH) then
+								SetHandChangeStyle(LEFT_TO_SHOULDER, LEFT_FROM_SHOULDER);
+								ExecHandChangeAnimation();
+							else
+								SetHandChangeStyle(BOTH_TO_SHOULDER, LEFT_FROM_SHOULDER)
+								ExecHandChangeAnimation();
+							end
+							
 							return true;
 						elseif (targetMoveset == WeaponMovesetOverride.KnightLongsword) then
 							HKSDataExposer.TransformWeapon(weaponHand, "67540000");
+							if (style == HAND_LEFT_BOTH or style == HAND_RIGHT_BOTH) then
+								SetHandChangeStyle(LEFT_TO_SHOULDER, BOTH_FROM_ALL);
+								ExecHandChangeAnimation();
+							else
+								SetHandChangeStyle(BOTH_TO_SHOULDER, LEFT_TO_WAIST);
+								ExecHandChangeAnimation();
+							end
+							
 							return true;
 						end
 					end
