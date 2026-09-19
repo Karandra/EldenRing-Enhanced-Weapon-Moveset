@@ -11,3 +11,4 @@
 *.tpf filter=lfs diff=lfs merge=lfs -text
 *.tpfbdt filter=lfs diff=lfs merge=lfs -text
 *.tpfbhd filter=lfs diff=lfs merge=lfs -text
+*.exe filter=lfs diff=lfs merge=lfs -text
