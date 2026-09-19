@@ -281,7 +281,7 @@ local g_WeaponMovesetController = nil;
 function WeaponMovesetController(_param1, _param2)
 	local MagicTranslationStatus =
 	{
-		ScriptDataExposerRequired = 1,
+		HKSDataExposerRequired = 1,
 		TwoHandingRequired = 2,
 		InvalidCatalyst = 3,
 		InvalidSpell = 4
@@ -1106,7 +1106,7 @@ function WeaponMovesetController(_param1, _param2)
 						-- casting action available.
 						
 						local success, reason = this:ExecMagicTranslation();
-						if (not success and (reason == MagicTranslationStatus.ScriptDataExposerRequired or reason == MagicTranslationStatus.TwoHandingRequired or reason == MagicTranslationStatus.InvalidCatalyst)) then
+						if (not success and (reason == MagicTranslationStatus.HKSDataExposerRequired or reason == MagicTranslationStatus.TwoHandingRequired or reason == MagicTranslationStatus.InvalidCatalyst)) then
 							return false;
 						end
 						return true;
@@ -1738,6 +1738,8 @@ function WeaponMovesetController(_param1, _param2)
 					end
 				end
 				
+				local weaponCategory = this.WeaponCategory;
+				local movesetOverride = this.MovesetOverride;
 				local style = c_Style;
 				local wep_hand = nil;
 				local magic_hand = nil;
@@ -1757,9 +1759,9 @@ function WeaponMovesetController(_param1, _param2)
 					return false, MagicTranslationStatus.TwoHandingRequired;
 				end
 				
-				local equipType = env(GetEquipWeaponCategory, magic_hand);
-				local movesetOverride = env(GetEquipWeaponSpecialCategoryNumber, magic_hand);
-				if (equipType == WeaponMovesetCategory.SpellCatalyst) then
+				local otherWeaponCategory = env(GetEquipWeaponCategory, magic_hand);
+				local otherWeaponMovesetOverride = env(GetEquipWeaponSpecialCategoryNumber, magic_hand);
+				if (otherWeaponCategory == WeaponMovesetCategory.SpellCatalyst) then
 					if (env(IsMagicUseMenuOpening, magic_hand) == TRUE) then
 						ResetRequest();
 						act(OpenMenuWhenUsingMagic, magicButton);
@@ -1867,7 +1869,12 @@ function WeaponMovesetController(_param1, _param2)
 						}, magic_index);
 					end
 					local function IsMagicUsable(magic_index)
-						return env(IsMagicUseable, magic_hand, 0) == TRUE;
+						local isMagicUsable = env(IsMagicUseable, magic_hand, 0) == TRUE;
+						
+						if (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
+							return isMagicUsable and IsSorcery(magic_index);
+						end
+						return isMagicUsable;
 					end
 					local function IsMagicInvalid(magic_index)
 						return magic_index == 254 or magic_index == 255;
@@ -1965,7 +1972,7 @@ function WeaponMovesetController(_param1, _param2)
 							-- 128: Minor Erdtree
 							-- 141: Messmer's Orb
 							-- 146: Spira
-							if (movesetOverride == WeaponMovesetOverride.StaffOfTheGreatBeyond) then
+							if (otherWeaponMovesetOverride == WeaponMovesetOverride.StaffOfTheGreatBeyond) then
 								SetVariable("Magic_SpecialStaffCategory", 1);
 							else
 								SetVariable("Magic_SpecialStaffCategory", 0);
@@ -2208,9 +2215,15 @@ function WeaponMovesetController(_param1, _param2)
 				local weaponCategory = this.WeaponCategory;
 				local movesetOverride = this.MovesetOverride;
 				
-				-- Allow Rellana's Twin Blades to use the magic trnslation even though the weapon itself isn't using the
-				-- enhanced moveset due to being a paired weapon.
-				return (this:IsAvailable() or movesetOverride == WeaponMovesetOverride.RellanaTwinBlades);
+				if (this:IsAvailable()) then
+					return true;
+				elseif (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
+					-- Allow Rellana's Twin Blades to use the magic translation (sorcery only) even though the weapon itself isn't using the
+					-- enhanced moveset due to being a paired weapon.
+					-- See 'IsMagicTranslationActive' and 'ExecMagicTranslation' for details.
+					return true;
+				end
+				return false;
 			end,
 			
 			-- Returns true if the magic translation feature is active at the moment
@@ -2221,6 +2234,8 @@ function WeaponMovesetController(_param1, _param2)
 			-- Returns: bool
 			IsMagicTranslationActive = function(this, magicKind)
 				if (this:IsMagicTranslationEnabled()) then
+					local weaponCategory = this.WeaponCategory;
+					local movesetOverride = this.MovesetOverride;
 					local style = c_Style;
 					
 					local otherWeapon = nil;
@@ -2240,6 +2255,11 @@ function WeaponMovesetController(_param1, _param2)
 							else
 								magicKind.Sorcery = true;
 							end
+						end
+						
+						-- Disable incantations for untransformed (vanilla) Rellana's Twin Blades
+						if (magicKind and movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
+							magicKind.Incantations = false;
 						end
 						return true;
 					end
