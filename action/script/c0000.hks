@@ -2122,7 +2122,7 @@ function WeaponMovesetController(_param1, _param2)
 				-- WeaponMovesetOverride targetMoveset
 			-- Returns: bool, true if sucessful
 			TransformWeaponMoveset = function(this, targetMoveset)
-				this:DebugOutput("[TransformWeaponMoveset] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, targetMoveset = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, targetMoveset);
+				--this:DebugOutput("[TransformWeaponMoveset] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, targetMoveset = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, targetMoveset);
 				
 				if (IsHKSDataExposerAvailable()) then
 					local weaponHand = this.WeaponHand;
