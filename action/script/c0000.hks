@@ -1962,10 +1962,15 @@ function WeaponMovesetController(_param1, _param2)
 					end
 					
 					if (not jumpKind) then
-						-- Not sure this really is required here. Looks like something to move shield out of the way? Check hkb later
+						-- Shields aren't applicable for our magic translation feature, so set it to 0. Apperently it switches the magic
+						-- animation to a variant with a little different arm position and weapon rotation.
 						SetVariable("MagicRight_ShieldCategory", 0);
 						
 						-- Similar to 'JumpAttack_HandCondition', but for weapon/staff position for some spells like gravity ones
+						-- 3: [Enhanced Weapon Moveset] CatalystSwordWeaponBuff - Swap weapon buff to Bloodflame Blade/Poison Armament animation
+						-- 2: [Vanilla+SotE] Catalyst Sword
+						-- 1: [Vanilla+SotE] Staff when used for Incantations
+						-- 0: [Vanilla] Default
 						if (ShouldRotateWeapon(magic_index)) then
 							SetVariable("Magic_SpecialStaffCategory", 2);
 						elseif (magic_index == 141 or magic_index == 128 or magic_index == 146) then
@@ -1977,6 +1982,9 @@ function WeaponMovesetController(_param1, _param2)
 							else
 								SetVariable("Magic_SpecialStaffCategory", 0);
 							end
+						elseif (magic_index == 11) then
+							-- 11: Scholar Armament, Frozen Armament, Unseen Blade
+							SetVariable("Magic_SpecialStaffCategory", 3);
 						else
 							SetVariable("Magic_SpecialStaffCategory", 0);
 						end
