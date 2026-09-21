@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<bnd4>
+  <filename>c0000_a7x.anibnd.dcx</filename>
+  <compression>DCX_KRAK</compression>
+  <compressionLevel>6</compressionLevel>
+  <oodleCompressorType>KRAK</oodleCompressorType>
+  <root>N:\GR\data</root>
+  <version>07D7R6</version>
+  <format>IDs, Names1, Names2, Compression</format>
+  <bigendian>False</bigendian>
+  <bitbigendian>False</bitbigendian>
+  <unicode>True</unicode>
+  <extended>0x04</extended>
+  <unk04>False</unk04>
+  <unk05>False</unk05>
+  <files>
+    <file>
+      <flags>Flag1</flags>
+      <id>6000000</id>
+      <path>Model\chr\blf\div_data.txt</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>7000000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a7x.compendium</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>9999999</id>
+      <path>Model\chr\blf\ver_0001.txt</path>
+    </file>
+	
+	<!-- ### 2h Stance: Medium (Default) ### -->
+	
+	<!-- [DS3: Greatswords] Stance WA (StartIdle) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1070010100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010100.hkx</path>
+    </file>
+	
+	<!-- [DS3: Greatswords] Stance WA (Idle) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1070010110</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010110.hkx</path>
+    </file>
+	
+	<!-- [DS3: Greatswords] Stance WA (Move) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1070010115</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010115.hkx</path>
+    </file>
+	
+	<!-- [DS3: Greatswords] Stance WA (EndIdle) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1070010120</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010120.hkx</path>
+    </file>
+	
+	<!-- [DS3: Greatswords] Stance WA (Light) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1070010130</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010130.hkx</path>
+    </file>
+	
+	<!-- [DS3: Greatswords] Stance WA (Heavy) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1070010140</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010140.hkx</path>
+    </file>
+	
+	<!-- [DS3: Greatsword of Judgment] Stance of Judgment WA (Light) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1070010200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010200.hkx</path>
+    </file>
+	
+	<!-- [DS3: Moonlight Greatsword] Moonlight Vortex WA -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1070010210</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010210.hkx</path>
+    </file>
+	
+	<!-- [DS3: Ultra Greatswords] Unused animation: Special 1 - Sword Bash -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070010800</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010800.hkx</path>
+    </file>
+	
+	<!-- [SDT: Armored Warrior] Sword Bash (From Stance) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070010802</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010802.hkx</path>
+    </file>
+	
+	<!-- [SDT: Armored Warrior] Sword Bash (From Neutral) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070010803</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010803.hkx</path>
+    </file>
+	
+	<!-- ### 2h Stance: Low ### -->
+	
+	<!-- [SDT: Armored Warrior] Idle -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070100000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_100000.hkx</path>
+    </file>
+	
+	<!-- [SDT: Armored Warrior] Idle (Alternate) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070100001</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_100001.hkx</path>
+    </file>
+	
+	<!-- [SDT: Armored Warrior] Walk -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070120000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120000.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070120001</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120001.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070120002</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120002.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070120003</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120003.hkx</path>
+    </file>
+	
+	<!-- [SDT: Armored Warrior] Sprint -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070120200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120200.hkx</path>
+    </file>
+  </files>
+</bnd4>

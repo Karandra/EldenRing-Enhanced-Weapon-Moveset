@@ -1,4 +1,4 @@
-Num  = 641
+Num  = 642
 1    = "1 - L_Foot_Target2"
 2    = "121 - L_ArmToe_Target"
 3    = "124 - R_ArmToe_Target"
@@ -640,4 +640,5 @@ Num  = 641
 639  = "IsMadTorch"
 640  = "IsEnoughArtPointsL2_MadTorchEnd"
 641  = "IsEnoughArtPointsL2_MadTorchLoop"
+642  = "WeaponStanceIndex"
     

@@ -11,7 +11,6 @@ chr/_DSAS_WORKSPACE.json
 # Unpacked dcx files
 chr/c0000-anibnd-dcx/*
 chr/c0000-behbnd-dcx/*
-chr/c0000_a2x-anibnd-dcx/*
 
 # Other files
 *.lnk

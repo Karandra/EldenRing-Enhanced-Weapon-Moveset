@@ -1117,6 +1117,8 @@ function WeaponMovesetController(_param1, _param2)
 							if (this.ParamRowID == "67540000") then
 								return this:TransformWeaponMoveset(WeaponMovesetOverride.RellanaTwinBlades);
 							end
+						elseif (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+							return this:TransformWeaponStance();
 						end
 					end
 				end
@@ -2161,9 +2163,9 @@ function WeaponMovesetController(_param1, _param2)
 						else
 							ExecEventHalfBlend(event, blend_type);
 						end
+						
 						act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
 						SetAIActionState();
-						
 						return true;
 					end
 					
@@ -2194,6 +2196,64 @@ function WeaponMovesetController(_param1, _param2)
 					end
 				end
 				return false;
+			end,
+			
+			-- Transforms the weapon Stance
+			-- Returns: bool, true if sucessful
+			TransformWeaponStance = function(this)
+				--this:DebugOutput("[TransformWeaponStance] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, StanceIndex = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, tostring(GetVariable("WeaponStanceIndex")));
+				
+				local style = c_Style;
+				local variableName = "WeaponStanceIndex";
+				local function SelectNext(stanceIndex)
+					local maxStanceIndex = 1;
+					
+					local nextIndex = stanceIndex + 1;
+					if (nextIndex <= maxStanceIndex) then
+						return nextIndex;
+					end
+					return nil;
+				end
+				local function ExecAnimation(blend_type, no_reset)
+					blend_type = blend_type or ALLBODY;
+					
+					if (blend_type == ALLBODY) then
+						local move_event = Event_Move;
+						if (c_IsStealth == TRUE) then
+							move_event = Event_Stealth_Move;
+						end
+						if (MoveStart(LOWER, move_event, FALSE) == TRUE) then
+							blend_type = UPPER;
+						end
+					end
+					
+					local event = Event_HandChangeStart;
+					if (c_IsStealth == TRUE) then
+						event = Event_StealthHandChangeStart;
+					end
+					
+					if (no_reset) then
+						ExecEventHalfBlendNoReset(event, blend_type);
+					else
+						ExecEventHalfBlend(event, blend_type);
+					end
+					
+					act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+					SetAIActionState();
+					return true;
+				end
+				
+				local nextIndex = SelectNext(GetVariable(variableName));
+				if (nextIndex) then
+					--this:DebugOutput("[TransformWeaponStance] New StanceIndex = %s", nextIndex);
+					
+					SetVariable(variableName, nextIndex);
+				else
+					SetVariable(variableName, 0);
+				end
+				ExecAnimation();
+				
+				return true;
 			end,
 			
 			-- Controls the access to env(IsSpecialTransitionPossible) inside ExecAttack.
@@ -2328,10 +2388,10 @@ function WeaponMovesetController(_param1, _param2)
 						end
 					elseif (movesetOverride == WeaponMovesetOverride.RellanaTwinBlades) then
 						if (actionContext == WeaponMovesetActionContext.Global) then
-							if (this:IsMagicTranslationActive()) then
-								return actionKind == WeaponMovesetActionKind.TransformWeaponL1 or actionKind == WeaponMovesetActionKind.TransformWeapon;
+							if (this:IsNetworkCompatibilityEnabled()) then
+								return this:IsMagicTranslationActive() and actionKind == WeaponMovesetActionKind.TransformWeaponL1;
 							else
-								return actionKind == WeaponMovesetActionKind.TransformWeapon;
+								return (this:IsMagicTranslationActive() and actionKind == WeaponMovesetActionKind.TransformWeaponL1) or actionKind == WeaponMovesetActionKind.TransformWeapon;
 							end
 						end
 					end
