@@ -375,6 +375,165 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_429090.hkx</path>
     </file>
 	
+	<!-- [Clever's: Low Stance Idle] Fall -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070404050</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_404050.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump (Neutral) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402000.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump (Walk) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402010</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402010.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402011</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402011.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402012</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402012.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402013</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402013.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump (Run) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402020</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402020.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402021</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402021.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402022</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402022.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402023</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402023.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump (Sprint) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402030</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402030.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump (Loop) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402040</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402040.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump Land (Neutral) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402100.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump Land (Directional) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402110</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402110.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402111</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402111.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402112</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402112.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402113</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402113.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump Land to Run -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402115</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402115.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402116</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402116.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402117</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402117.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402118</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402118.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump Land (Neutral) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402100.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402130</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402130.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402140</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402140.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump Land (Sprint) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402120</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402120.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Jump Land to Sprint -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402125</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402125.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1070402127</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_402127.hkx</path>
+    </file>
+	
 	<!-- [Clever's: Low Stance Idle] Stealth (Idle to Stealth) -->
 	<file>
       <flags>Flag1</flags>
