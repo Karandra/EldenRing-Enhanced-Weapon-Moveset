@@ -340,6 +340,27 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_126250.hkx</path>
     </file>
 	
+	<!-- [Clever's: Low Stance Idle] Backstep (Light) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070427000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_427000.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Backstep (Normal) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070427010</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_427010.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Backstep (Heavy) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070427020</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_427020.hkx</path>
+    </file>
+	
 	<!-- [Clever's: Low Stance Idle] Hand Change (End, ChangeBoth) -->
 	<file>
       <flags>Flag1</flags>
