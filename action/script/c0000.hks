@@ -715,6 +715,20 @@ function WeaponMovesetController(_param1, _param2)
 				return true;
 			end,
 			
+			-- Handles the weapon hand style change request.
+			-- Called from 'ExecHandChange'.
+			--
+			-- Parameters:
+				-- int fromStyle: the previous hand style
+			-- Returns: bool, true if allowed
+			OnWeaponHandStyleChange = function(this, fromStyle)
+				if (fromStyle == HAND_RIGHT_BOTH or fromStyle == HAND_LEFT_BOTH) then
+					this:ResetWeaponStance();
+				end
+				
+				return true;
+			end,
+			
 			-- Handles the weapon hand style change completion.
 			-- Called from 'HandChangeEnd_Upper_onDeactivate' and 'StealthHandChangeEnd_Upper_onDeactivate'.
 			--
@@ -740,6 +754,8 @@ function WeaponMovesetController(_param1, _param2)
 					UpdateMagicTranslationUIFor(WeaponMovesetController(HAND_RIGHT), HAND_LEFT);
 				elseif (toStyle == HAND_LEFT_BOTH) then
 					UpdateMagicTranslationUIFor(WeaponMovesetController(HAND_LEFT), HAND_RIGHT);
+				else
+					
 				end
 			end,
 			
@@ -788,6 +804,8 @@ function WeaponMovesetController(_param1, _param2)
 						otherWeapon:UpdateMagicTranslationUI(false, false);
 					end
 				end
+				
+				this:ResetWeaponStance();
 			end,
 			
 		-- public:
@@ -2198,7 +2216,7 @@ function WeaponMovesetController(_param1, _param2)
 				return false;
 			end,
 			
-			-- Transforms the weapon Stance
+			-- Transforms the weapon stance
 			-- Returns: bool, true if sucessful
 			TransformWeaponStance = function(this)
 				--this:DebugOutput("[TransformWeaponStance] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, StanceIndex = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, tostring(GetVariable("WeaponStanceIndex")));
@@ -2254,6 +2272,12 @@ function WeaponMovesetController(_param1, _param2)
 				ExecAnimation();
 				
 				return true;
+			end,
+			
+			-- Reset the weapon stance transforms
+			-- Returns: void
+			ResetWeaponStance = function(this)
+				SetVariable("WeaponStanceIndex", 0);
 			end,
 			
 			-- Controls the access to env(IsSpecialTransitionPossible) inside ExecAttack.
@@ -7280,7 +7304,11 @@ function ExecHandChange(hand, is_force, blend_type, no_reset)
         end
     end
 	
+	if (not g_WeaponMovesetController:OnWeaponHandStyleChange(style)) then
+		return FALSE;
+	end
 	g_WeaponMovesetController.PreviousHandStyle = style;
+	
     local event = Event_HandChangeStart
     if c_IsStealth == TRUE then
         event = Event_StealthHandChangeStart

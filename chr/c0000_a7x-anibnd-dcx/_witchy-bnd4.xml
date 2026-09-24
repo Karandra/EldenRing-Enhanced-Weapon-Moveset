@@ -340,6 +340,20 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_126250.hkx</path>
     </file>
 	
+	<!-- [Clever's: Low Stance Idle] Hand Change (End, ChangeBoth) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070429070</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_429070.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Hand Change (End, BothLeft) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070429090</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_429090.hkx</path>
+    </file>
+	
 	<!-- [Clever's: Low Stance Idle] Stealth (Idle to Stealth) -->
 	<file>
       <flags>Flag1</flags>
@@ -454,6 +468,69 @@
       <flags>Flag1</flags>
       <id>1070590600</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_590600.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Hand Change (Start, BothRightToBack) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529010</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529010.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Hand Change (Start, BothRightToWaist) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529011</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529011.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Hand Change (Start, BothRightToShoulder) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529012</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529012.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Weapon Change (Start, LeftBack) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529030</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529030.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Weapon Change (Start, LeftWaist) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529031</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529031.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Weapon Change (Start, LeftShoulder) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529032</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529032.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Weapon Change (Start, LeftSpear) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529033</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529033.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Hand Change (End, ChangeBoth) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529070</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529070.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Low Stance Idle] Stealth Hand Change (End, BothLeft) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070529090</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_529090.hkx</path>
     </file>
   </files>
 </bnd4>
