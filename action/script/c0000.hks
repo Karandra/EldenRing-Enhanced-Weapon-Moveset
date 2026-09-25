@@ -783,8 +783,8 @@ function WeaponMovesetController(_param1, _param2)
 					if (style ~= HAND_LEFT_BOTH and style ~= HAND_RIGHT_BOTH) then
 						this:ResetWeaponStance();
 					end
-				-- Reset the weapon stance if we changed from a stance-capable weapon
 				elseif (fromWeapon:IsStanceSystemSupported()) then
+					-- Reset the weapon stance if we changed from a stance-capable weapon
 					this:ResetWeaponStance();
 					
 					-- If we aren't holding a stance-capable weapon in either hand, disable the system entirely
@@ -792,6 +792,18 @@ function WeaponMovesetController(_param1, _param2)
 					local right = WeaponMovesetController(HAND_RIGHT);
 					if (not left:IsStanceSystemSupported() and not right:IsStanceSystemSupported()) then
 						this:DisableWeaponStance();
+					end
+				else
+					-- Reset the stance if a weapon is switched while having a stance capable weapon in the other hand
+					local otherWeapon = nil;
+					if (hand == HAND_LEFT) then
+						otherWeapon = WeaponMovesetController(HAND_RIGHT);
+					else
+						otherWeapon = WeaponMovesetController(HAND_LEFT);
+					end
+					
+					if (otherWeapon:IsStanceSystemSupported()) then
+						this:ResetWeaponStance();
 					end
 				end
 				
@@ -805,13 +817,12 @@ function WeaponMovesetController(_param1, _param2)
 					end
 				elseif (not fromWeapon or fromWeapon:IsSameAs(toWeapon)) then
 					return;
-					
-				-- Reset the weapon if we changed from a weapon with magic translation enabled
 				elseif (fromWeapon:IsMagicTranslationEnabled()) then
+					-- Reset the weapon if we changed from a weapon with magic translation enabled
 					fromWeapon:UpdateMagicTranslationUI(false, false);
-					
-				-- Also reset our weapons if we swapped to or from a casting catalyst while having a magic translation capable weapon in the other hand
 				elseif (fromWeapon.WeaponCategory == WeaponMovesetCategory.SpellCatalyst or toWeapon.WeaponCategory == WeaponMovesetCategory.SpellCatalyst) then
+					-- Also reset our weapons if we swapped to or from a casting catalyst while having a magic translation capable weapon in the other hand
+					
 					-- No need to do anything if we've just loaded in
 					if (fromWeapon:IsNull()) then
 						return;
