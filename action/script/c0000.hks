@@ -724,6 +724,8 @@ function WeaponMovesetController(_param1, _param2)
 			OnWeaponHandStyleChange = function(this, fromStyle)
 				if (fromStyle == HAND_RIGHT_BOTH or fromStyle == HAND_LEFT_BOTH) then
 					this:ResetWeaponStance();
+				else
+					this:UpdateWeaponStance();
 				end
 				
 				return true;
@@ -751,11 +753,11 @@ function WeaponMovesetController(_param1, _param2)
 				end
 				
 				if (toStyle == HAND_RIGHT_BOTH) then
-					UpdateMagicTranslationUIFor(WeaponMovesetController(HAND_RIGHT), HAND_LEFT);
+					local weapon = WeaponMovesetController(HAND_RIGHT);
+					UpdateMagicTranslationUIFor(weapon, HAND_LEFT);
 				elseif (toStyle == HAND_LEFT_BOTH) then
-					UpdateMagicTranslationUIFor(WeaponMovesetController(HAND_LEFT), HAND_RIGHT);
-				else
-					
+					local weapon = WeaponMovesetController(HAND_LEFT);
+					UpdateMagicTranslationUIFor(weapon, HAND_RIGHT);
 				end
 			end,
 			
@@ -768,10 +770,32 @@ function WeaponMovesetController(_param1, _param2)
 				-- WeaponMovesetController toWeapon: the new weapon
 			-- Returns: void
 			OnWeaponChanged = function(this, hand, fromWeapon, toWeapon)
-				--this:DebugOutput("[OnWeaponChanged] hand = %s, fromWeapon{WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, toWeapon{WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, c_Style = %s", hand, fromWeapon.WeaponCategory, fromWeapon.MovesetOverride, fromWeapon.WeaponHand, toWeapon.WeaponCategory, toWeapon.MovesetOverride, toWeapon.WeaponHand, c_Style);
+				--this:DebugOutput("[OnWeaponChanged] hand = %s, fromWeapon{Handle = %s, WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, toWeapon{Handle = %s, WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, c_Style = %s", hand, fromWeapon.ItemHandle, fromWeapon.WeaponCategory, fromWeapon.MovesetOverride, fromWeapon.WeaponHand, toWeapon.ItemHandle, toWeapon.WeaponCategory, toWeapon.MovesetOverride, toWeapon.WeaponHand, c_Style);
 				
 				local style = c_Style;
 				
+				-- ## Stance System ##
+				-- We should reapply the stance when the player is holding a compatible weapon upon loading into the game
+				if (toWeapon:IsStanceSystemSupported()) then
+					this:UpdateWeaponStance();
+					
+					-- If we aren't two-handing it, reset the stance after updating its presentation
+					if (style ~= HAND_LEFT_BOTH and style ~= HAND_RIGHT_BOTH) then
+						this:ResetWeaponStance();
+					end
+				-- Reset the weapon stance if we changed from a stance-capable weapon
+				elseif (fromWeapon:IsStanceSystemSupported()) then
+					this:ResetWeaponStance();
+					
+					-- If we aren't holding a stance-capable weapon in either hand, disable the system entirely
+					local left = WeaponMovesetController(HAND_LEFT);
+					local right = WeaponMovesetController(HAND_RIGHT);
+					if (not left:IsStanceSystemSupported() and not right:IsStanceSystemSupported()) then
+						this:DisableWeaponStance();
+					end
+				end
+				
+				-- ## Magic Translation ##
 				-- The case of loading into a game when the player is already two-handing a compatible weapon
 				if ((not fromWeapon or fromWeapon:IsNull()) and toWeapon:IsMagicTranslationEnabled() and (style == HAND_LEFT_BOTH or style == HAND_RIGHT_BOTH)) then
 					if (style == HAND_LEFT_BOTH) then
@@ -804,8 +828,6 @@ function WeaponMovesetController(_param1, _param2)
 						otherWeapon:UpdateMagicTranslationUI(false, false);
 					end
 				end
-				
-				this:ResetWeaponStance();
 			end,
 			
 		-- public:
@@ -851,7 +873,10 @@ function WeaponMovesetController(_param1, _param2)
 			-- Returns: bool
 			IsSameAs = function(this, other)
 				if (other) then
-					return this.WeaponCategory == other.WeaponCategory and this.MovesetOverride == other.MovesetOverride;
+					return
+					this.WeaponCategory == other.WeaponCategory and
+					this.MovesetOverride == other.MovesetOverride and
+					this.ItemHandle == other.ItemHandle;
 				end
 				return false;
 			end,
@@ -872,8 +897,9 @@ function WeaponMovesetController(_param1, _param2)
 				
 				if (IsHKSDataExposerAvailable()) then
 					local slot = HKSDataExposer.GetActiveArmamentEquipmentSlot(hand);
-					local rowID, upgradeLevel = HKSDataExposer.GetActiveArmamentParamRowID(hand, slot);
+					local handle, rowID, upgradeLevel = HKSDataExposer.GetActiveArmamentData(hand, slot);
 					
+					this.ItemHandle = handle;
 					this.ParamRowID = rowID;
 					this.UpgradeLevel = upgradeLevel;
 				end
@@ -2124,6 +2150,36 @@ function WeaponMovesetController(_param1, _param2)
 				end
 			end,
 			
+			-- Executes a generic half-blend event.
+			--
+			-- Parameters:
+				-- struct event: the animation event to execute.
+				-- int blendType: ALLBODY, UPPER or LOWER. ALLBODY is used if nil.
+				-- bool noReset
+			-- Returns: void
+			ExecHalfBlendEvent = function(this, event, blendType, noReset)
+				blendType = blendType or ALLBODY;
+				
+				if (blendType == ALLBODY) then
+					local moveEvent = Event_Move;
+					if (c_IsStealth == TRUE) then
+						moveEvent = Event_Stealth_Move;
+					end
+					if (MoveStart(LOWER, moveEvent, FALSE) == TRUE) then
+						blendType = UPPER;
+					end
+				end
+				
+				if (noReset) then
+					ExecEventHalfBlendNoReset(event, blendType);
+				else
+					ExecEventHalfBlend(event, blendType);
+				end
+				
+				act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
+				SetAIActionState();
+			end,
+			
 			-- Update the weapon param data so the spell selector UI would highlight applicable spells.
 			--
 			-- Parameters:
@@ -2156,35 +2212,16 @@ function WeaponMovesetController(_param1, _param2)
 					local weaponHand = this.WeaponHand;
 					local weaponCategory = this.WeaponCategory;
 					local movesetOverride = this.MovesetOverride;
-					local style = c_Style;
 					
-					local function ExecHandChangeAnimation(blend_type, no_reset)
-						blend_type = blend_type or ALLBODY;
-						
-						if (blend_type == ALLBODY) then
-							local move_event = Event_Move;
-							if (c_IsStealth == TRUE) then
-								move_event = Event_Stealth_Move;
-							end
-							if (MoveStart(LOWER, move_event, FALSE) == TRUE) then
-								blend_type = UPPER;
-							end
-						end
-						
+					local style = c_Style;
+					local function ExecHandChangeAnimation()
 						g_WeaponMovesetController.PreviousHandStyle = style;
+						
 						local event = Event_HandChangeStart;
 						if (c_IsStealth == TRUE) then
 							event = Event_StealthHandChangeStart;
 						end
-						if (no_reset) then
-							ExecEventHalfBlendNoReset(event, blend_type);
-						else
-							ExecEventHalfBlend(event, blend_type);
-						end
-						
-						act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
-						SetAIActionState();
-						return true;
+						this:ExecHalfBlendEvent(event);
 					end
 					
 					if (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
@@ -2216,67 +2253,98 @@ function WeaponMovesetController(_param1, _param2)
 				return false;
 			end,
 			
+			-- Returns true if the current weapon supports stance system.
+			-- Returns: bool
+			IsStanceSystemSupported = function(this)
+				local weaponCategory = this.WeaponCategory;
+				local movesetOverride = this.MovesetOverride;
+				
+				return this:IsKGSCompatible(weaponCategory, movesetOverride);
+			end,
+			
+			-- Returns the active weapon stance index.
+			-- Returns: int, nil if the system is not active at the moment.
+			GetActiveWeaponStance = function(this)
+				local function IsSpEffectPresent(id)
+					return env(GetSpEffectID, id) == TRUE;
+				end
+				
+				if (IsSpEffectPresent(103200)) then
+					return 0;
+				elseif (IsSpEffectPresent(103210)) then
+					return 1;
+				end
+				return nil;
+			end,
+			
 			-- Transforms the weapon stance
 			-- Returns: bool, true if sucessful
 			TransformWeaponStance = function(this)
 				--this:DebugOutput("[TransformWeaponStance] {WeaponCategory = %s, MovesetOverride = %s, WeaponHand = %s}, StanceIndex = %s", this.WeaponCategory, this.MovesetOverride, this.WeaponHand, tostring(GetVariable("WeaponStanceIndex")));
 				
-				local style = c_Style;
-				local variableName = "WeaponStanceIndex";
-				local function SelectNext(stanceIndex)
-					local maxStanceIndex = 1;
+				local function SelectNext()
+					local activeStance = this:GetActiveWeaponStance();
 					
-					local nextIndex = stanceIndex + 1;
-					if (nextIndex <= maxStanceIndex) then
-						return nextIndex;
+					if (activeStance == 0) then
+						return 1, 103210;
+					elseif (activeStance == 1) then
+						return 0, 103200;
 					end
 					return nil;
 				end
-				local function ExecAnimation(blend_type, no_reset)
-					blend_type = blend_type or ALLBODY;
+				local function SwitchStance(stanceIndex, stanceSpEffectID)
+					-- SpEffects for other stances are going to be automatically removed due to the category priority
+					act(AddSpEffect, stanceSpEffectID);
+					SetVariable("WeaponStanceIndex", stanceIndex);
 					
-					if (blend_type == ALLBODY) then
-						local move_event = Event_Move;
-						if (c_IsStealth == TRUE) then
-							move_event = Event_Stealth_Move;
-						end
-						if (MoveStart(LOWER, move_event, FALSE) == TRUE) then
-							blend_type = UPPER;
-						end
-					end
+					SetHandChangeStyle(LEFT_TO_WAIST, BOTH_FROM_ALL);
 					
 					local event = Event_HandChangeStart;
 					if (c_IsStealth == TRUE) then
 						event = Event_StealthHandChangeStart;
 					end
-					
-					if (no_reset) then
-						ExecEventHalfBlendNoReset(event, blend_type);
-					else
-						ExecEventHalfBlend(event, blend_type);
-					end
-					
-					act(SetNpcAIAttackRequestIDAfterBlend, env(GetNpcAIAttackRequestID));
-					SetAIActionState();
-					return true;
+					this:ExecHalfBlendEvent(event);
 				end
 				
-				local nextIndex = SelectNext(GetVariable(variableName));
+				local nextIndex, nextSpEffectID = SelectNext();
 				if (nextIndex) then
-					--this:DebugOutput("[TransformWeaponStance] New StanceIndex = %s", nextIndex);
-					
-					SetVariable(variableName, nextIndex);
+					this:DebugOutput("[TransformWeaponStance] Stance switched to: %s ()", nextIndex, nextSpEffectID);
+					SwitchStance(nextIndex, nextSpEffectID);
 				else
-					SetVariable(variableName, 0);
+					this:DebugOutput("[TransformWeaponStance] Stance reset to default");
+					SwitchStance(0, 103200);
 				end
-				ExecAnimation();
-				
 				return true;
 			end,
 			
-			-- Reset the weapon stance transforms
+			-- Updates the weapon stance from the currently active SpEffect. Resets it to default if none are present.
+			-- Returns: void
+			UpdateWeaponStance = function(this)
+				local activeStance = this:GetActiveWeaponStance();
+				if (activeStance) then
+					-- The SpEffect is already active, no need to reapply it
+					SetVariable("WeaponStanceIndex", activeStance);
+				else
+					-- Reset to default
+					act(AddSpEffect, 103200);
+					SetVariable("WeaponStanceIndex", 0);
+				end
+			end,
+			
+			-- Reset the weapon stance transforms, but keep the SpEffect for the active stance to serve as a marker to reapply
+			-- the stance after conditions are met such as two-handing the weapon again.
 			-- Returns: void
 			ResetWeaponStance = function(this)
+				SetVariable("WeaponStanceIndex", 0);
+			end,
+			
+			-- Disables the weapon stance. Sets the current stane to default and removes any UI indicators for it.
+			-- Returns: void
+			DisableWeaponStance = function(this)
+				act(ClearSpEffect, 103200);
+				act(ClearSpEffect, 103210);
+				act(ClearSpEffect, 103220);
+				
 				SetVariable("WeaponStanceIndex", 0);
 			end,
 			
