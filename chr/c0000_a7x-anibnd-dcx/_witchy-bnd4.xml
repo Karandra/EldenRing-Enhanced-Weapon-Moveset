@@ -35,78 +35,78 @@
 	<!-- [DS3: Greatswords] Stance WA (StartIdle) -->
     <file>
       <flags>Flag1</flags>
-      <id>1070010100</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010100.hkx</path>
+      <id>1075037100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037100.hkx</path>
     </file>
 	
 	<!-- [DS3: Greatswords] Stance WA (Idle) -->
     <file>
       <flags>Flag1</flags>
-      <id>1070010110</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010110.hkx</path>
+      <id>1075037110</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037110.hkx</path>
     </file>
 	
 	<!-- [DS3: Greatswords] Stance WA (Move) -->
     <file>
       <flags>Flag1</flags>
-      <id>1070010115</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010115.hkx</path>
+      <id>1075037115</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037115.hkx</path>
     </file>
 	
 	<!-- [DS3: Greatswords] Stance WA (EndIdle) -->
     <file>
       <flags>Flag1</flags>
-      <id>1070010120</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010120.hkx</path>
+      <id>1075037120</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037120.hkx</path>
     </file>
 	
 	<!-- [DS3: Greatswords] Stance WA (Light) -->
     <file>
       <flags>Flag1</flags>
-      <id>1070010130</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010130.hkx</path>
+      <id>1075037130</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037130.hkx</path>
     </file>
 	
 	<!-- [DS3: Greatswords] Stance WA (Heavy) -->
     <file>
       <flags>Flag1</flags>
-      <id>1070010140</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010140.hkx</path>
+      <id>1075037140</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037140.hkx</path>
     </file>
 	
 	<!-- [DS3: Greatsword of Judgment] Stance of Judgment WA (Light) -->
     <file>
       <flags>Flag1</flags>
-      <id>1070010200</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010200.hkx</path>
+      <id>1075037200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037200.hkx</path>
     </file>
 	
 	<!-- [DS3: Moonlight Greatsword] Moonlight Vortex WA -->
     <file>
       <flags>Flag1</flags>
-      <id>1070010210</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010210.hkx</path>
+      <id>1075037210</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037210.hkx</path>
     </file>
 	
 	<!-- [DS3: Ultra Greatswords] Unused animation: Special 1 - Sword Bash -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070010800</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010800.hkx</path>
+      <id>1075036800</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_036800.hkx</path>
     </file>
 	
-	<!-- [SDT: Armored Warrior] Sword Bash (From Stance) -->
+	<!-- [SDT: Armored Warrior] Sword Bash -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070010802</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010802.hkx</path>
+      <id>1075436800</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_436800.hkx</path>
     </file>
 	
-	<!-- [SDT: Armored Warrior] Sword Bash (From Neutral) -->
+	<!-- [SDT: Armored Warrior] Sword Bash (Alternate) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070010803</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_010803.hkx</path>
+      <id>1075436801</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_436801.hkx</path>
     </file>
 	
 	<!-- ### 2h Stance: Low ### -->
@@ -114,230 +114,230 @@
 	<!-- [Clever's: Low Stance Idle] Idle -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070100000</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_100000.hkx</path>
+      <id>1070400000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_400000.hkx</path>
     </file>
 	
 	<!-- [SDT: Armored Warrior] Idle 1 -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070100001</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_100001.hkx</path>
+      <id>1070400001</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_400001.hkx</path>
     </file>
 	
 	<!-- [SDT: Armored Warrior] Idle 2 -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070100002</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_100002.hkx</path>
+      <id>1070400002</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_400002.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Walk -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120000</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120000.hkx</path>
+      <id>1070420000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420000.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120001</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120001.hkx</path>
+      <id>1070420001</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420001.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120002</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120002.hkx</path>
+      <id>1070420002</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420002.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120003</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120003.hkx</path>
+      <id>1070420003</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420003.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120009</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120009.hkx</path>
+      <id>1070420009</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420009.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Walk (Heavy) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120010</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120010.hkx</path>
+      <id>1070420010</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420010.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120011</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120011.hkx</path>
+      <id>1070420011</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420011.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120012</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120012.hkx</path>
+      <id>1070420012</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420012.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120013</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120013.hkx</path>
+      <id>1070420013</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420013.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Walk (Overloaded) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120020</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120020.hkx</path>
+      <id>1070420020</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420020.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120021</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120021.hkx</path>
+      <id>1070420021</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420021.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120022</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120022.hkx</path>
+      <id>1070420022</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420022.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120023</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120023.hkx</path>
+      <id>1070420023</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420023.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Run -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120100</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120100.hkx</path>
+      <id>1070420100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420100.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120101</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120101.hkx</path>
+      <id>1070420101</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420101.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120102</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120102.hkx</path>
+      <id>1070420102</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420102.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120103</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120103.hkx</path>
+      <id>1070420103</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420103.hkx</path>
     </file>
 
 	<!-- [Clever's: Low Stance Idle] Run (Heavy) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120110</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120110.hkx</path>
+      <id>1070420110</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420110.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120111</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120111.hkx</path>
+      <id>1070420111</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420111.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120112</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120112.hkx</path>
+      <id>1070420112</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420112.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120113</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120113.hkx</path>
+      <id>1070420113</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420113.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Run (Overloaded) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120120</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120120.hkx</path>
+      <id>1070420120</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420120.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120121</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120121.hkx</path>
+      <id>1070420121</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420121.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120122</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120122.hkx</path>
+      <id>1070420122</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420122.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070120123</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120123.hkx</path>
+      <id>1070420123</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420123.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Sprint -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120200</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120200.hkx</path>
+      <id>1070420200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420200.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Sprint (Heavy) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120210</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120210.hkx</path>
+      <id>1070420210</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420210.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Sprint (Overloaded) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070120220</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_120220.hkx</path>
+      <id>1070420220</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_420220.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Run Stop -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070122100</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_122100.hkx</path>
+      <id>1070422100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_422100.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070122101</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_122101.hkx</path>
+      <id>1070422101</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_422101.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070122102</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_122102.hkx</path>
+      <id>1070422102</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_422102.hkx</path>
     </file>
 	<file>
       <flags>Flag1</flags>
-      <id>1070122103</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_122103.hkx</path>
+      <id>1070422103</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_422103.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Sprint Stop -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070122200</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_122200.hkx</path>
+      <id>1070422200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_422200.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Quick Turn (Right) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070126020</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_126020.hkx</path>
+      <id>1070426020</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_426020.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Quick Turn (Left) -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070126030</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_126030.hkx</path>
+      <id>1070426030</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_426030.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Sprint Pivot -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070126250</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_126250.hkx</path>
+      <id>1070426250</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_426250.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Backstep (Light) -->
