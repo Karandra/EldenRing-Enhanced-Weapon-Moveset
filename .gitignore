@@ -15,6 +15,7 @@ chr/c0000-behbnd-dcx/*
 # Other files
 *.lnk
 *.mp4
+*.rar
 *.zip
 *.7z
 desktop.ini
