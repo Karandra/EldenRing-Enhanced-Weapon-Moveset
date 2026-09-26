@@ -88,6 +88,18 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037210.hkx</path>
     </file>
 	
+	<!-- [DS3: Farron Greatsword] Block and Follow-up attack -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1075037300</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037300.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075037301</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_037301.hkx</path>
+    </file>
+	
 	<!-- [DS3: Ultra Greatswords] Unused animation: Special 1 - Sword Bash -->
 	<file>
       <flags>Flag1</flags>
@@ -111,6 +123,65 @@
 	
 	<!-- ### 2h Stance: Low ### -->
 	
+	<!-- [DS3: Short Sword] R2 -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1075032500</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_032500.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075032501</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_032501.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075032505</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_032505.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075032510</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_032510.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075032515</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_032515.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Silverfang] 2h R1 -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432000.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432010</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432010.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432020</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432020.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432030</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432030.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432040</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432040.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432050</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432050.hkx</path>
+    </file>
+	
 	<!-- [Clever's: Low Stance Idle] 2h Wall Repel -->
 	<file>
       <flags>Flag1</flags>
@@ -126,6 +197,48 @@
       <flags>Flag1</flags>
       <id>1075433920</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_433920.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Silverfang] 2h RR1 -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432200.hkx</path>
+    </file>
+	
+	<!-- [DS3: Greatswords] 2h RR1 -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432201</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432201.hkx</path>
+    </file>
+	
+	<!-- [DS3: Curved Greatswords] 2h RR1 -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432202</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432202.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Silverfang] 2h RR2 -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432210</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432210.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Silverfang] 2h CR1 -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432300</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432300.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Silverfang] 2h BR1 -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432400</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432400.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Idle -->
