@@ -735,13 +735,24 @@ function WeaponMovesetController(_param1, _param2)
 			-- Called from 'ExecHandChange'.
 			--
 			-- Parameters:
+				-- int hand: the weapon hand
 				-- int fromStyle: the previous hand style
 			-- Returns: bool, true if allowed
-			OnWeaponHandStyleChange = function(this, fromStyle)
+			OnWeaponHandStyleChange = function(this, hand, fromStyle)
+				--this:DebugOutput("[OnWeaponHandStyleChange] fromStyle = %s", fromStyle);
+				
 				if (fromStyle == HAND_RIGHT_BOTH or fromStyle == HAND_LEFT_BOTH) then
+					-- Reset presentation when we're switching to 1h mode
 					this:ResetWeaponStancePresentation();
 				else
-					this:UpdateWeaponStancePresentation();
+					-- When switching to 2h mode, update presentation if we're going to two-hand a stance-capable weapon,
+					-- reset otherwise.
+					local weapon = WeaponMovesetController(hand);
+					if (weapon:IsStanceSystemSupported()) then
+						this:UpdateWeaponStancePresentation();
+					else
+						this:ResetWeaponStancePresentation();
+					end
 				end
 				
 				return true;
@@ -1188,8 +1199,15 @@ function WeaponMovesetController(_param1, _param2)
 							if (this.ParamRowID == "67540000") then
 								return this:TransformWeaponMoveset(WeaponMovesetOverride.RellanaTwinBlades);
 							end
-						elseif (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-							return this:CycleWeaponStance();
+						else
+							if (this:IsStanceSystemSupported()) then
+								return this:CycleWeaponStance();
+							elseif (this.WeaponHand == HAND_RIGHT) then
+								local otherWeapon = WeaponMovesetController(HAND_LEFT);
+								if (otherWeapon:IsStanceSystemSupported()) then
+									return otherWeapon:CycleWeaponStance();
+								end
+							end
 						end
 					end
 				end
@@ -2425,7 +2443,15 @@ function WeaponMovesetController(_param1, _param2)
 					if (c_IsStealth == TRUE) then
 						event = Event_StealthHandChangeStart;
 					end
-					SetHandChangeStyle(LEFT_TO_WAIST, BOTH_FROM_ALL);
+					
+					-- 14: StanceChange Left, Start
+					-- 15: StanceChange Right, Start
+					-- 10: StanceChange End
+					if (this.WeaponHand == HAND_LEFT) then
+						SetHandChangeStyle(14, 10);
+					else
+						SetHandChangeStyle(15, 10);
+					end
 					this:ExecHalfBlendEvent(event);
 				end
 				
@@ -7500,7 +7526,7 @@ function ExecHandChange(hand, is_force, blend_type, no_reset)
         end
     end
 	
-	if (not g_WeaponMovesetController:OnWeaponHandStyleChange(style)) then
+	if (not g_WeaponMovesetController:OnWeaponHandStyleChange(hand, style)) then
 		return FALSE;
 	end
 	g_WeaponMovesetController.PreviousHandStyle = style;
