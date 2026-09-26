@@ -1689,15 +1689,21 @@ function WeaponMovesetController(_param1, _param2)
 				local movesetOverride = this.MovesetOverride;
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLightJump) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-						if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
-							action.R2 = "W_AttackRightHeavy2Start";
-						end
-						
-						if (this:IsNetworkCompatibilityEnabled()) then
-							action.B2 = "W_AttackBothHeavy2Start";
-						else
-							-- [TrueComboBreak]
-							--action.B1 = "W_AttackBothHeavy1aStart";
+						local activeStance = this:GetActiveWeaponStance();
+						if (activeStance == WeaponMovesetStance.Default) then
+							if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
+								action.R2 = "W_AttackRightHeavy2Start";
+							end
+							
+							if (this:IsNetworkCompatibilityEnabled()) then
+								action.B2 = "W_AttackBothHeavy2Start";
+							else
+								-- [TrueComboBreak]
+								--action.B1 = "W_AttackBothHeavy1aStart";
+								action.B2 = "W_AttackBothHeavy2cStart";
+							end
+						elseif (activeStance == WeaponMovesetStance.LowStance) then
+							action.B1 = "W_AttackBothLight3";
 							action.B2 = "W_AttackBothHeavy2cStart";
 						end
 						
@@ -1705,15 +1711,21 @@ function WeaponMovesetController(_param1, _param2)
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackHeavyJump or onUpdateKind == WeaponMovesetOnUpdateKind.AttackDualJump) then
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-						if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
-							action.R2 = "W_AttackRightHeavy2Start";
-						end
-						
-						if (this:IsNetworkCompatibilityEnabled()) then
-							action.B2 = "W_AttackBothHeavy2Start";
-						else
-							-- [TrueComboBreak]
-							--action.B1 = "W_AttackBothHeavy1aStart";
+						local activeStance = this:GetActiveWeaponStance();
+						if (activeStance == WeaponMovesetStance.Default) then
+							if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
+								action.R2 = "W_AttackRightHeavy2Start";
+							end
+							
+							if (this:IsNetworkCompatibilityEnabled()) then
+								action.B2 = "W_AttackBothHeavy2Start";
+							else
+								-- [TrueComboBreak]
+								--action.B1 = "W_AttackBothHeavy1aStart";
+								action.B2 = "W_AttackBothHeavy1bStart";
+							end
+						elseif (activeStance == WeaponMovesetStance.LowStance) then
+							action.B1 = "W_AttackBothLight3";
 							action.B2 = "W_AttackBothHeavy1bStart";
 						end
 						
