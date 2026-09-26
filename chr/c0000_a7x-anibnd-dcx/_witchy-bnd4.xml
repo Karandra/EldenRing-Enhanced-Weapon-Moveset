@@ -111,6 +111,23 @@
 	
 	<!-- ### 2h Stance: Low ### -->
 	
+	<!-- [Clever's: Low Stance Idle] 2h Wall Repel -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075433900</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_433900.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075433910</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_433910.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075433920</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_433920.hkx</path>
+    </file>
+	
 	<!-- [Clever's: Low Stance Idle] Idle -->
 	<file>
       <flags>Flag1</flags>
