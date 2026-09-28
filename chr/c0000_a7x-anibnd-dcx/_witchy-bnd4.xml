@@ -182,6 +182,139 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432050.hkx</path>
     </file>
 	
+	<!-- [ER: Fire Knight] 2h R1 -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432060</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432060.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432061</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432061.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432062</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432062.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432063</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432063.hkx</path>
+    </file>
+	
+	<!-- [Clever's: Silverfang] 2h R2(2) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075436510</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_436510.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1075436515</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_436515.hkx</path>
+    </file>
+	
+	<!-- [SDT: Armored Warrior] 2h Mixed -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432520</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432520.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432521</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432521.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432522</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432522.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432523</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432523.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432524</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432524.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432525</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432525.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432526</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432526.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432527</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432527.hkx</path>
+    </file>
+	
+	<!-- [ER: Fire Knight] 2h Mixed -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432530</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432530.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432531</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432531.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432531</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432531.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432532</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432532.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432533</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432533.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432534</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432534.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432535</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432535.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432536</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432536.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432537</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432537.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432538</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432538.hkx</path>
+    </file>
+    <file>
+      <flags>Flag1</flags>
+      <id>1075432539</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432539.hkx</path>
+    </file>
+	
 	<!-- [Clever's: Low Stance Idle] 2h Wall Repel -->
 	<file>
       <flags>Flag1</flags>
