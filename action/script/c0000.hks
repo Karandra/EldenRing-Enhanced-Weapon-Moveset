@@ -586,6 +586,9 @@ function WeaponMovesetController(_param1, _param2)
 					elseif (request == ATTACK_REQUEST_BOTH_LIGHT and action.B1 and string.find(action.B1, "Heavy", nil, true)) then
 						g_WeaponMovesetController.ChargeAttackInput = ACTION_ARM_R1;
 					end
+					
+					-- Usually is not required, but there's 1 frame when switching events where TAE isn't fast enough at clearing it.
+					this:ResetWeaponStanceSwitchWindow();
 				end
 				return true;
 			end,
@@ -686,9 +689,6 @@ function WeaponMovesetController(_param1, _param2)
 			-- Returns: void
 			OnAttackActivate = function(this, hand)
 				--this:DebugOutput("[OnAttackActivate] Set to hand %s (HAND_LEFT = %s, HAND_RIGHT = %s, HAND_LEFT_BOTH = %s, HAND_RIGHT_BOTH = %s)", tostring(hand), HAND_LEFT, HAND_RIGHT, HAND_LEFT_BOTH, HAND_RIGHT_BOTH);
-				
-				-- Usually is not required, but there's 1 frame when switching events where TAE isn't fast enough at clearing it.
-				this:ResetWeaponStanceSwitchWindow();
 			end,
 			
 			-- Handles the jump activation routine, called from 'Jump_Activate' and 'Jump_[N|F|D]_onActivate'
@@ -3139,124 +3139,6 @@ function AttackBothHeavy2cEnd_onUpdate()
         return;
     end
 	weaponMovesetController:HandleChargeTransition(WeaponMovesetOnUpdateKind.HeavyChargeEnd, nil, action);
-end
-
--- HKB activate handlers
-function AttackBothGuardSpecial1_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothGuardSpecial2_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothGuardSpecial3_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-
-function AttackBothHeavy1aSubStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy1aStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy1aEnd_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy2aStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy2aEnd_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-
-function AttackBothHeavy1bSubStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy1bStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy1bEnd_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy2bStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy2bEnd_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-
-function AttackBothHeavy1cSubStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy1cStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy1cEnd_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy2cStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy2cEnd_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-
-function AttackBothHeavy1SubStart_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy1Start_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy1End_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy2Start_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavy2End_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-
-function AttackBothLight1_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothLight2_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothLight3_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothLight4_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothLight5_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothLight6_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-
-function AttackBothDash_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavyDash_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-
-function AttackBothLightStep_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothLightStealth_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothBackstep_onActivate()
-WeaponMovesetController():OnAttackActivate(nil);
-end
-
-function AttackBothLightCounter_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
-end
-function AttackBothHeavyCounter_onActivate()
-	WeaponMovesetController():OnAttackActivate(nil);
 end
 
 ------------------------------------------
