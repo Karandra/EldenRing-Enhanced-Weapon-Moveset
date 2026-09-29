@@ -1530,7 +1530,9 @@ function WeaponMovesetController(_param1, _param2)
 							g_WeaponMovesetController:AttackChain_OnAttack(2);
 							
 							action.B1 = "W_AttackBothLight3";
-							action.B2 = "W_AttackBothHeavy1cStart";
+							if (this:SwitchWeaponStanceIfAllowed(ATTACK_REQUEST_BOTH_HEAVY, WeaponMovesetStance.LowStance)) then
+								action.B2 = "W_AttackBothHeavy1Start";
+							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
 							g_WeaponMovesetController:AttackChain_OnAttack(4);
 							
