@@ -28114,12 +28114,14 @@ function Jump_LandAttack_Normal_onUpdate()
 	
 	local action = WeaponMovesetController():TranslateActionOnJumpAttack(WeaponMovesetOnUpdateKind.AttackLightJump,
 	{
+		R1 = "W_AttackRightLight2",
 		R2 = "W_AttackRightHeavy1Start",
+		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy1Start"
 	});
 	
-    if EvasionCommonFunction(FALL_TYPE_DEFAULT, "W_AttackRightLight2", action.R2, "W_AttackLeftLight1",
-        "W_AttackLeftHeavy1", "W_AttackBothLight2", action.B2, QUICKTYPE_ROLLING) == TRUE then
+    if EvasionCommonFunction(FALL_TYPE_DEFAULT, action.R1, action.R2, "W_AttackLeftLight1",
+        "W_AttackLeftHeavy1", action.B1, action.B2, QUICKTYPE_ROLLING) == TRUE then
         return
     end
 end
@@ -28141,12 +28143,14 @@ function Jump_LandAttack_Hard_onUpdate()
 	
 	local action = WeaponMovesetController():TranslateActionOnJumpAttack(WeaponMovesetOnUpdateKind.AttackHeavyJump,
 	{
+		R1 = "W_AttackRightLight2",
 		R2 = "W_AttackRightHeavy1Start",
+		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy1Start"
 	});
 
-    if EvasionCommonFunction(FALL_TYPE_DEFAULT, "W_AttackRightLight2", action.R2, "W_AttackLeftLight1",
-        "W_AttackLeftHeavy1", "W_AttackBothLight2", action.B2, QUICKTYPE_ROLLING) == TRUE then
+    if EvasionCommonFunction(FALL_TYPE_DEFAULT, action.R1, action.R2, "W_AttackLeftLight1",
+        "W_AttackLeftHeavy1", action.B1, action.B2, QUICKTYPE_ROLLING) == TRUE then
         return
     end
 end
