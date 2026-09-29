@@ -1384,7 +1384,7 @@ function WeaponMovesetController(_param1, _param2)
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.LowStance) then
 							action.B1 = "W_AttackBothLight1";
-							action.B2 = "W_AttackBothHeavy1cStart";
+							action.B2 = "W_AttackBothHeavy1Start";
 						end
 					end
 				end
@@ -1403,7 +1403,7 @@ function WeaponMovesetController(_param1, _param2)
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
 							action.B1 = "W_AttackBothLight6";
-							action.B2 = "W_AttackBothHeavy1aStart";
+							action.B2 = "W_AttackBothHeavy2Start";
 						end
 					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						if (not this:IsNetworkCompatibilityEnabled()) then
@@ -1487,7 +1487,7 @@ function WeaponMovesetController(_param1, _param2)
 					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.LowStance) then
-							action.B1 = "W_AttackBothLight5";
+							action.B1 = "W_AttackBothLight6";
 						end
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2Start or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2End) then
