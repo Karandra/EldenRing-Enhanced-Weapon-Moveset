@@ -671,9 +671,11 @@ function WeaponMovesetController(_param1, _param2)
 						end
 						return 0;
 					end
-					this.ChainAttackIndex = AdvanceChain(this.ChainAttackIndex, GetActiveAttackHand());
 					
-					return this.ChainAttackIndex;
+					local nextIndex = AdvanceChain(this.ChainAttackIndex, GetActiveAttackHand());
+					this.ChainAttackIndex = nextIndex;
+					
+					return nextIndex;
 				end
 				return nil;
 			end,
@@ -1333,6 +1335,8 @@ function WeaponMovesetController(_param1, _param2)
 								end
 								action.B2 = "W_AttackBothHeavy1bStart";
 							elseif (activeStance == WeaponMovesetStance.LowStance) then
+								g_WeaponMovesetController:AttackChain_OnAttack(4);
+								
 								action.B2 = "W_AttackBothHeavy2cStart";
 							end
 						end
