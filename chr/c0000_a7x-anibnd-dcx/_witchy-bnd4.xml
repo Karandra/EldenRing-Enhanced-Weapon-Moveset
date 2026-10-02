@@ -32,11 +32,25 @@
 	
 	<!-- ### Repository: Light attacks ### -->
 	
-	<!-- [Karandra's Edit: Great Katana R1(2) to Low Stance] -->
+	<!-- [Karandra's Edit: Light Greatsword R1(3) to Low Stance] -->
 	<file>
       <flags>Flag1</flags>
       <id>1075438000</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438000.hkx</path>
+    </file>
+	
+	<!-- [Karandra's Edit: Light Greatsword R1(4) to Low Stance] -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438001</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438001.hkx</path>
+    </file>
+	
+	<!-- [Karandra's Edit: Great Katana R1(2) to Low Stance] -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438002</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438002.hkx</path>
     </file>
 	
 	<!-- [Clever's: Silverfang] 2h R1 -->
