@@ -30,28 +30,37 @@
       <path>Model\chr\blf\ver_0001.txt</path>
     </file>
 	
-	<!-- ### Repository: Light attacks ### -->
+	<!-- ### Repository: Karandra's Edits ### -->
 	
-	<!-- [Karandra's Edit: Light Greatsword R1(3) to Low Stance] -->
+	<!-- [2h R1(1): Light Greatsword R1(3) to Low Stance] -->
 	<file>
       <flags>Flag1</flags>
       <id>1075438000</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438000.hkx</path>
     </file>
 	
-	<!-- [Karandra's Edit: Light Greatsword R1(4) to Low Stance] -->
+	<!-- [2h R1(2): Light Greatsword R1(4) to Low Stance] -->
 	<file>
       <flags>Flag1</flags>
       <id>1075438001</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438001.hkx</path>
     </file>
 	
-	<!-- [Karandra's Edit: Great Katana R1(2) to Low Stance] -->
+	<!-- [2h R1(3): Great Katana R1(2) to Low Stance] -->
 	<file>
       <flags>Flag1</flags>
       <id>1075438002</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438002.hkx</path>
     </file>
+	
+	<!-- [2h R1(4): Light Greatsword R1(2) to Low Stance] -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438003</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438003.hkx</path>
+    </file>
+	
+	<!-- ### Repository: Light attacks ### -->
 	
 	<!-- [Clever's: Silverfang] 2h R1 -->
 	<file>
@@ -400,25 +409,32 @@
 	
 	<!-- ### Repository: 2h Stance - Low ### -->
 	
-	<!-- [Clever's: Low Stance Idle] Idle -->
+	<!-- [Clever's: Low Stance Idle] Idle (with finger motion) -->
 	<file>
       <flags>Flag1</flags>
       <id>1070400000</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_400000.hkx</path>
     </file>
 	
-	<!-- [SDT: Armored Warrior] Idle 1 -->
+	<!-- [Clever's: Low Stance Idle] Idle (no finger motion) -->
 	<file>
       <flags>Flag1</flags>
       <id>1070400001</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_400001.hkx</path>
     </file>
 	
+	<!-- [SDT: Armored Warrior] Idle 1 -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1070400005</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_400005.hkx</path>
+    </file>
+	
 	<!-- [SDT: Armored Warrior] Idle 2 -->
 	<file>
       <flags>Flag1</flags>
-      <id>1070400002</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_400002.hkx</path>
+      <id>1070400006</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a070_400006.hkx</path>
     </file>
 	
 	<!-- [Clever's: Low Stance Idle] Walk -->
