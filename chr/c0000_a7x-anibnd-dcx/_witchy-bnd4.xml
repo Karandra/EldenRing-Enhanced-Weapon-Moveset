@@ -60,6 +60,13 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438003.hkx</path>
     </file>
 	
+	<!-- [2h R1(3, 1): Fire Knight to Low Stance] -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438004</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438004.hkx</path>
+    </file>
+	
 	<!-- ### Repository: Light attacks ### -->
 	
 	<!-- [Clever's: Silverfang] 2h R1 -->
