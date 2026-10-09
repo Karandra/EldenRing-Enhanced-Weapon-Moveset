@@ -68,11 +68,11 @@
     </file>
 	
 	<!-- [2h R2(1) (Charged): Fire Knight to Low Stance] -->
-	<!-- <file> -->
-      <!-- <flags>Flag1</flags> -->
-      <!-- <id>1075438020</id> -->
-      <!-- <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438020.hkx</path> -->
-    <!-- </file> -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438020</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438020.hkx</path>
+    </file>
 	
 	<!-- [2h R2(1) (Uncharged): Straight Sword R2(1) to Low Stance] -->
 	<file>
