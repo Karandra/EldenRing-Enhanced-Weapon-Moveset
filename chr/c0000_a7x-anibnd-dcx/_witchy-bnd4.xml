@@ -60,11 +60,39 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438003.hkx</path>
     </file>
 	
-	<!-- [2h R1(3, 1): Fire Knight to Low Stance] -->
+	<!-- [2h R1(3, Alt 1): Fire Knight to Low Stance] -->
 	<file>
       <flags>Flag1</flags>
       <id>1075438004</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438004.hkx</path>
+    </file>
+	
+	<!-- [2h R2(1) (Charged): Fire Knight to Low Stance] -->
+	<!-- <file> -->
+      <!-- <flags>Flag1</flags> -->
+      <!-- <id>1075438020</id> -->
+      <!-- <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438020.hkx</path> -->
+    <!-- </file> -->
+	
+	<!-- [2h R2(1) (Uncharged): Straight Sword R2(1) to Low Stance] -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438021</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438021.hkx</path>
+    </file>
+	
+	<!-- [2h R2(2) (Charged): Fire Knight to Low Stance] -->
+	<!-- <file> -->
+      <!-- <flags>Flag1</flags> -->
+      <!-- <id>1075438024</id> -->
+      <!-- <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438024.hkx</path> -->
+    <!-- </file> -->
+	
+	<!-- [2h R2(2) (Uncharged): Straight Sword R2(2) to Low Stance] -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438025</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438025.hkx</path>
     </file>
 	
 	<!-- ### Repository: Light attacks ### -->
