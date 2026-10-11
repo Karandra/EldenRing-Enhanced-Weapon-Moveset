@@ -109,6 +109,20 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438031.hkx</path>
     </file>
 	
+	<!-- [2h RR1: Straight Sword RR2 to Low Stance] -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438035</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438035.hkx</path>
+    </file>
+	
+	<!-- [2h RR2: Clever's Silverfang BR1 to Low Stance] -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075438036</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_438036.hkx</path>
+    </file>
+	
 	<!-- ### Repository: Light attacks ### -->
 	
 	<!-- [Clever's: Silverfang] 2h R1 -->
