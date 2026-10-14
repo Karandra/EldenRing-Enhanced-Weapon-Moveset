@@ -1337,6 +1337,9 @@ function WeaponMovesetController(_param1, _param2)
 							elseif (activeStance == WeaponMovesetStance.LowStance) then
 								g_WeaponMovesetController:AttackChain_OnAttack(4);
 								
+								if (this:ShouldUseAlternativeAttackTransition()) then
+									action.B1 = "W_AttackBothLight1";
+								end
 								action.B2 = "W_AttackBothHeavy2cStart";
 							end
 						end
@@ -1573,7 +1576,11 @@ function WeaponMovesetController(_param1, _param2)
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothHeavy1aStart";
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
-							action.B1 = "W_AttackBothHeavy1aStart";
+							if (this:ShouldUseAlternativeAttackTransition()) then
+								action.B1 = "W_AttackBothLight1";
+							else
+								action.B1 = "W_AttackBothHeavy1aStart";
+							end
 						end
 					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						action.B1 = "W_AttackBothHeavy1aStart";
@@ -1675,15 +1682,29 @@ function WeaponMovesetController(_param1, _param2)
 					return action;
 				end
 				
+				-- Take the action context from special action first
+				if (specialAction) then
+					action.ActionContext = specialAction.ActionContext;
+				end
+				
+				-- Guard moveset A and B invocation
 				local weaponCategory = this.WeaponCategory;
 				local movesetOverride = this.MovesetOverride;
-				if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-					if (this:IsNetworkCompatibilityEnabled()) then
-						action.B1 = "W_AttackBothLight2";
-						action.B2 = "W_AttackBothHeavy2Start";
-					else
-						action.B1 = "W_AttackBothHeavy1aStart";
-						action.B2 = "W_AttackBothHeavy1bStart";
+				if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
+					action.B1 = "W_AttackBothHeavy1aStart";
+					action.B2 = "W_AttackBothHeavy1bStart";
+				
+					local activeStance = this:GetActiveWeaponStance();
+					if (activeStance == WeaponMovesetStance.Default) then
+						if (this:IsNetworkCompatibilityEnabled()) then
+							action.B1 = "W_AttackBothLight2";
+							action.B2 = "W_AttackBothHeavy2Start";
+						end
+					elseif (activeStance == WeaponMovesetStance.LowStance) then
+						if (action.ActionContext == WeaponMovesetActionContext.OnGuardEnd and this:ShouldUseAlternativeAttackTransition()) then
+							action.B1 = "W_AttackBothLight1";
+							action.B2 = "W_AttackBothHeavy1Start";
+						end
 					end
 				elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 					if (this:IsNetworkCompatibilityEnabled()) then
@@ -1695,8 +1716,8 @@ function WeaponMovesetController(_param1, _param2)
 					end
 				end
 				
+				-- Guard moveset C and special atatcks invocation
 				if (specialAction) then
-					action.ActionContext = specialAction.ActionContext;
 					local actionKind = specialAction.ActionKind;
 					local actionMod = specialAction.ActionMod;
 					local actionContext = specialAction.ActionContext;
@@ -2629,6 +2650,20 @@ function WeaponMovesetController(_param1, _param2)
 			-- Returns: bool
 			IsSpecialTransitionAllowed = function(this)
 				return not this:IsAvailable();
+			end,
+			
+			-- Return true if the current attack should use the specified alternative follow up transition.
+			--
+			-- Parameters:
+				-- int index: the transition index to check for, if nil 0 is assumed
+			-- Returns: bool
+			ShouldUseAlternativeAttackTransition = function(this, index)
+				if (not index or index == 0) then
+					return env(GetSpEffectID, 103400) == TRUE;
+				elseif (index == 1) then
+					return env(GetSpEffectID, 103410) == TRUE;
+				end
+				return false;
 			end,
 			
 			-- Returns true if the moveset should loop R1(3) back into R1(2) instead of allowing it to advance to R1(4) and end there
