@@ -1312,6 +1312,12 @@ function WeaponMovesetController(_param1, _param2)
 							-- because chaining to the actual R1(2) afted evasion looks odd.
 							g_WeaponMovesetController:AttackChain_OnAttack(2);
 							
+							if (this:ShouldUseAlternativeAttackTransition(0)) then
+								action.B1 = "W_AttackBothLight3";
+							elseif (this:ShouldUseAlternativeAttackTransition(1)) then
+								action.B1 = "W_AttackBothLight1";
+							end
+							
 							if (this:SwitchWeaponStanceIfAllowed(ATTACK_REQUEST_BOTH_HEAVY, WeaponMovesetStance.Default)) then
 								action.B2 = "W_AttackBothHeavy2aStart";
 							end
@@ -1385,7 +1391,7 @@ function WeaponMovesetController(_param1, _param2)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight5) then
 					g_WeaponMovesetController:AttackChain_OnAttack(5);
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.LowStance) then
 							action.B1 = "W_AttackBothLight1";
@@ -1448,8 +1454,13 @@ function WeaponMovesetController(_param1, _param2)
 					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.LowStance) then
-							action.B1 = "W_AttackBothLight3";
-							action.B2 = "W_AttackBothHeavy1bStart";
+							if (this:ShouldUseAlternativeAttackTransition()) then
+								action.B1 = "W_AttackBothLight1";
+								action.B2 = "W_AttackBothHeavy2Start";
+							else
+								action.B1 = "W_AttackBothLight4";
+								action.B2 = "W_AttackBothHeavy1bStart";
+							end
 						end
 					end
 				end
