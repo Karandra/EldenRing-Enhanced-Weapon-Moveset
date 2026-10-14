@@ -1773,8 +1773,9 @@ function WeaponMovesetController(_param1, _param2)
 			-- Parameters:
 				-- enum WeaponMovesetOnUpdateKind
 				-- struct Action&
+				-- bool landing: true if this is a landing jump attack
 			-- Returns: struct Action&
-			TranslateActionOnJumpAttack = function(this, onUpdateKind, action)
+			TranslateActionOnJumpAttack = function(this, onUpdateKind, action, landing)
 				if (not this:IsAvailable()) then
 					return action;
 				end
@@ -1797,7 +1798,11 @@ function WeaponMovesetController(_param1, _param2)
 								action.B2 = "W_AttackBothHeavy2cStart";
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
-							action.B1 = "W_AttackBothLight5";
+							if (landing) then
+								action.B1 = "W_AttackBothLight4";
+							else
+								action.B1 = "W_AttackBothLight5";
+							end
 							action.B2 = "W_AttackBothHeavy2cStart";
 						end
 						
@@ -28191,7 +28196,7 @@ function Jump_LandAttack_Normal_onUpdate()
 		R2 = "W_AttackRightHeavy1Start",
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy1Start"
-	});
+	}, true);
 	
     if EvasionCommonFunction(FALL_TYPE_DEFAULT, action.R1, action.R2, "W_AttackLeftLight1",
         "W_AttackLeftHeavy1", action.B1, action.B2, QUICKTYPE_ROLLING) == TRUE then
@@ -28220,7 +28225,7 @@ function Jump_LandAttack_Hard_onUpdate()
 		R2 = "W_AttackRightHeavy1Start",
 		B1 = "W_AttackBothLight2",
 		B2 = "W_AttackBothHeavy1Start"
-	});
+	}, true);
 
     if EvasionCommonFunction(FALL_TYPE_DEFAULT, action.R1, action.R2, "W_AttackLeftLight1",
         "W_AttackLeftHeavy1", action.B1, action.B2, QUICKTYPE_ROLLING) == TRUE then
