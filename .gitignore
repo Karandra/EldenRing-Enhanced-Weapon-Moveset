@@ -5,6 +5,7 @@
 *.bin.prev
 *.dcx.bak
 *.dsasbak
+*.dsasautobak*
 chr/_DSAS_CACHE/*
 chr/_DSAS_WORKSPACE.json
 
