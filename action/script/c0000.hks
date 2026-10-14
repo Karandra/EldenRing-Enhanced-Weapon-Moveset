@@ -12985,9 +12985,14 @@ function AttackBothLight2_onUpdate()
             "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 2) == TRUE then
             return
         end
-    elseif AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackLeftLight1",
-        "W_AttackLeftHeavy1", "W_AttackBothLight1", "W_AttackBothHeavy1Start", FALSE, TRUE, 0) == TRUE then
-        return
+    else
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight2,
+		{
+			B1 = "W_AttackBothLight1",
+			B2 = "W_AttackBothHeavy1Start"
+		});
+		
+		AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0);
     end
 end
 
@@ -13008,14 +13013,18 @@ function AttackBothLight3_onUpdate()
             "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 3) == TRUE then
             return
         end
-    elseif AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackLeftLight1",
-        "W_AttackLeftHeavy1", "W_AttackBothLight1", "W_AttackBothHeavy1Start", FALSE, TRUE, 0) == TRUE then
-        return
+    else
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight3,
+		{
+			B1 = "W_AttackBothLight1",
+			B2 = "W_AttackBothHeavy1Start"
+		});
+		
+		AttackCommonFunction("W_AttackRightLight1", "W_AttackRightHeavy1Start", "W_AttackLeftLight1", "W_AttackLeftHeavy1", action.B1, action.B2, FALSE, TRUE, 0);
     end
 end
 
 function AttackBothLight4_onUpdate()
-	local weaponMovesetController = WeaponMovesetController();
     if IsEnableNextAttack(4, HAND_RIGHT) == TRUE then
         local b1 = "W_AttackBothLight5";
 		local b2 = "W_AttackBothHeavy1SubStart";
@@ -13024,7 +13033,7 @@ function AttackBothLight4_onUpdate()
 			b2 = "W_AttackBothHeavy1Start";
         end
 		
-		local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight4,
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight4,
 		{
 			B1 = b1,
 			B2 = b2
@@ -13035,7 +13044,7 @@ function AttackBothLight4_onUpdate()
             return
         end
     else
-		local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight4,
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight4,
 		{
 			B1 = "W_AttackBothLight1",
 			B2 = "W_AttackBothHeavy1Start"
@@ -13046,14 +13055,13 @@ function AttackBothLight4_onUpdate()
 end
 
 function AttackBothLight5_onUpdate()
-	local weaponMovesetController = WeaponMovesetController();
     if IsEnableNextAttack(5, HAND_RIGHT) == TRUE then
         local b1 = "W_AttackBothLight6"
         if g_ComboReset == TRUE then
             b1 = "W_AttackBothLight1"
         end
 		
-		local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight5,
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight5,
 		{
 			B1 = b1,
 			B2 = "W_AttackBothHeavy1SubStart"
@@ -13064,7 +13072,7 @@ function AttackBothLight5_onUpdate()
             return
         end
     else
-		local action = weaponMovesetController:TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight5,
+		local action = WeaponMovesetController():TranslateActionOnUpdate(WeaponMovesetOnUpdateKind.AttackBothLight5,
 		{
 			B1 = "W_AttackBothLight1",
 			B2 = "W_AttackBothHeavy1Start"
