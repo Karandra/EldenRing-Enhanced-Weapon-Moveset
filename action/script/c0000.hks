@@ -64,60 +64,29 @@
 -- Enhanced Weapon Moveset
 ------------------------------------------
 
--- Common functions
-function GetActiveAttackHand()
-    local style = c_Style
-    if (style == HAND_LEFT_BOTH) then
-        return HAND_LEFT;
-	elseif (style == HAND_RIGHT_BOTH) then
-        return HAND_RIGHT;
-	else
-		return style;
-    end
-end
-function GetWeaponCategory(hand)
-	if (not hand) then
-		hand = GetActiveAttackHand();
-	end
-	
-	if hand then
-		return env(GetEquipWeaponCategory, hand);
-	end
-	return nil;
-end
-function GetMovesetOverride(hand)
-	if (not hand) then
-		hand = GetActiveAttackHand();
-	end
-	
-	if hand then
-		return env(GetEquipWeaponSpecialCategoryNumber, hand);
-	end
-	return nil;
-end
-function IsHKSDataExposerAvailable()
-	return type(HKSDataExposer) == "table";
-end
-
 -- Enums
 local WeaponMovesetCategory =
 {
+	-- Vanilla
 	Greatsword = WEAPON_CATEGORY_LARGE_SWORD,
 	LightGreatsword = WEAPON_CATEGORY_LIGHT_LARGE_SWORD,
-	SpellCatalyst = WEAPON_CATEGORY_STAFF
+	SpellCatalyst = WEAPON_CATEGORY_STAFF,
+	
+	-- Custom
+	GreatswordEx = 75
 };
 local WeaponMovesetOverride =
 {
 	None = 0,
 	
-	KnightGreatsword = 132, -- (Default: 128); Knight's Greatsword, Banished Knight's Greatsword, Inseparable Greatsword
-	LeontielGreatsword = 133, -- (Default: 269); Leontiel's Greatsword
-	
-	KnightLongsword = 139, -- (Default: 0); Leda's Sword, Idus Sword, Milady
+	-- Vanilla
 	RellanaTwinBlades = 249, -- Rellana's Twin Blades
+	SacredSeal = 240, -- All sacred seals
+	StaffOfTheGreatBeyond = 290, -- Staff of the Great Beyond
 	
-	SacredSeal = 240, -- All seals
-	StaffOfTheGreatBeyond = 290 -- Staff of the Great Beyond
+	-- Custom
+	LeontielGreatsword = 133, -- (Default: 269); Leontiel's Greatsword
+	KnightLongsword = 139 -- (Default: none); Leda's Sword, Idus Sword, Milady
 };
 local WeaponMovesetStance =
 {
@@ -277,9 +246,69 @@ local WeaponMovesetOnUpdateKind =
 	HeavyChargeEnd = -1002,
 };
 
-local g_WeaponMovesetController = nil;
+-- Common functions
+
+-- Override the defalt act and env functions. The act is unchanged so far, but env is changed to translate
+-- extra weapon kinds back to its original type. This is done to avoid changing every place where weapon
+-- category is accessed.
+local GetEnvVariable = env;
+local InvokeEnvCommand = act;
+local function env(command, ...)
+	if (command == GetEquipWeaponCategory) then
+		local result = GetEnvVariable(command, ...);
+		if (result == WeaponMovesetCategory.GreatswordEx) then
+			return WeaponMovesetCategory.Greatsword;
+		end
+		
+		return result;
+	else
+		return GetEnvVariable(command, ...);
+	end
+end
+
+function GetActiveAttackHand()
+    local style = c_Style
+    if (style == HAND_LEFT_BOTH) then
+        return HAND_LEFT;
+	elseif (style == HAND_RIGHT_BOTH) then
+        return HAND_RIGHT;
+	else
+		return style;
+    end
+end
+function GetWeaponCategory(hand)
+	if (not hand) then
+		hand = GetActiveAttackHand();
+	end
+	
+	if hand then
+		return GetEnvVariable(GetEquipWeaponCategory, hand);
+	end
+	return nil;
+end
+function GetMovesetOverride(hand)
+	if (not hand) then
+		hand = GetActiveAttackHand();
+	end
+	
+	if hand then
+		return GetEnvVariable(GetEquipWeaponSpecialCategoryNumber, hand);
+	end
+	return nil;
+end
+function GetBaseWeaponCategoryOf(weaponCategory)
+	if (weaponCategory == WeaponMovesetCategory.GreatswordEx) then
+		return WeaponMovesetCategory.Greatsword;
+	end
+	return weaponCategory;
+end
+function IsHKSDataExposerAvailable()
+	return type(HKSDataExposer) == "table";
+end
 
 -- WeaponMovesetController class
+local g_WeaponMovesetController = nil;
+
 -- Parameters (1):
 	-- int hand: the hand to initialize the weapon for, if nil the active hand is used
 	
@@ -327,22 +356,19 @@ function WeaponMovesetController(_param1, _param2)
 				-- int movesetOverride: moveset override number
 			-- Returns: bool
 			IsAvailableOnWeapon = function(this, weaponCategory, movesetOverride)
-				if (weaponCategory == WeaponMovesetCategory.Greatsword) then
-					return movesetOverride == WeaponMovesetOverride.KnightGreatsword or movesetOverride == WeaponMovesetOverride.LeontielGreatsword;
+				if (weaponCategory == WeaponMovesetCategory.GreatswordEx) then
+					return true;
 				elseif (weaponCategory == WeaponMovesetCategory.LightGreatsword) then
 					return movesetOverride == WeaponMovesetOverride.KnightLongsword;
 				end
 				return false;
 			end,
 			
-			-- Checks if the provided weapon has a Knight's Greatsword compatible moveset
+			-- Checks if the provided weapon has weapon stance compatible moveset
 			--
 			-- Returns: bool
-			IsKGSCompatible = function(this, weaponCategory, movesetOverride)
-				if (weaponCategory == WeaponMovesetCategory.Greatsword) then
-					return movesetOverride == WeaponMovesetOverride.KnightGreatsword or movesetOverride == WeaponMovesetOverride.LeontielGreatsword;
-				end
-				return false;
+			IsStanceCompatible = function(this, weaponCategory, movesetOverride)
+				return weaponCategory == WeaponMovesetCategory.GreatswordEx;
 			end,
 			
 			-- Checks if the currently used weapon is held with both hands
@@ -1249,10 +1275,8 @@ function WeaponMovesetController(_param1, _param2)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackRightLight3) then
 					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-						if (this:IsLightAttackLoopEnabled()) then
-							action.R1 = "W_AttackRightLight2";
-						end
+					if (this:IsLightAttackLoopEnabled()) then
+						action.R1 = "W_AttackRightLight2";
 					end
 				end
 				
@@ -1264,10 +1288,8 @@ function WeaponMovesetController(_param1, _param2)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLeftHeavy3) then
 					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-						if (this:IsLightAttackLoopEnabled()) then
-							action.L2 = "W_AttackLeftHeavy2";
-						end
+					if (this:IsLightAttackLoopEnabled()) then
+						action.L2 = "W_AttackLeftHeavy2";
 					end
 				end
 				
@@ -1275,7 +1297,7 @@ function WeaponMovesetController(_param1, _param2)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight1) then
 					g_WeaponMovesetController:AttackChain_OnAttack(1);
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							if (this:IsNetworkCompatibilityEnabled()) then
@@ -1302,7 +1324,7 @@ function WeaponMovesetController(_param1, _param2)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight2) then
 					g_WeaponMovesetController:AttackChain_OnAttack(2);
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						if (not this:IsNetworkCompatibilityEnabled()) then
 							local activeStance = this:GetActiveWeaponStance();
 							if (activeStance == WeaponMovesetStance.Default) then
@@ -1319,9 +1341,9 @@ function WeaponMovesetController(_param1, _param2)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight3) then
 					g_WeaponMovesetController:AttackChain_OnAttack(3);
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
-						if (this:IsLightAttackLoopEnabled() and activeStance == WeaponMovesetStance.Default) then
+						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothLight2";
 						end
 						
@@ -1329,10 +1351,6 @@ function WeaponMovesetController(_param1, _param2)
 							action.B2 = "W_AttackBothHeavy2Start";
 						else
 							if (activeStance == WeaponMovesetStance.Default) then
-								if (this:IsLightAttackLoopEnabled()) then
-									-- [TrueComboBreak]
-									--action.B1 = "W_AttackBothHeavy1aStart";
-								end
 								action.B2 = "W_AttackBothHeavy1bStart";
 							elseif (activeStance == WeaponMovesetStance.LowStance) then
 								g_WeaponMovesetController:AttackChain_OnAttack(4);
@@ -1351,15 +1369,13 @@ function WeaponMovesetController(_param1, _param2)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight4) then
 					g_WeaponMovesetController:AttackChain_OnAttack(4);
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						
 						if (activeStance == WeaponMovesetStance.Default) then
-							if (this:IsLightAttackLoopEnabled()) then
-								-- While we have R1(3) -> R1(2) looping setup, if we somehow got to R1(4)
-								-- make it loop back to R1(3) and set a matching heavy so it all looks nice.
-								action.B1 = "W_AttackBothLight3";
-							end
+							-- While we have R1(3) -> R1(2) looping setup, if we somehow got to R1(4)
+							-- make it loop back to R1(3) and set a matching heavy so it all looks nice.
+							action.B1 = "W_AttackBothLight3";
 							
 							if (not this:IsNetworkCompatibilityEnabled()) then
 								action.B2 = "W_AttackBothHeavy2bStart";
@@ -1382,19 +1398,11 @@ function WeaponMovesetController(_param1, _param2)
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLight6) then
 					g_WeaponMovesetController:AttackChain_OnAttack(6);
-					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-						local activeStance = this:GetActiveWeaponStance();
-						if (activeStance == WeaponMovesetStance.LowStance) then
-							action.B1 = "W_AttackBothLight1";
-							action.B2 = "W_AttackBothHeavy1Start";
-						end
-					end
 				end
 				
 				-- 2h Running R1
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothDash) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							if (this:IsNetworkCompatibilityEnabled()) then
@@ -1417,7 +1425,7 @@ function WeaponMovesetController(_param1, _param2)
 				
 				-- 2h Running R2
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavyDash) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothLight3";
@@ -1437,7 +1445,7 @@ function WeaponMovesetController(_param1, _param2)
 				
 				-- 2h Evasion and stealth attacks
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLightStep or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothLightStealth) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.LowStance) then
 							action.B1 = "W_AttackBothLight3";
@@ -1448,7 +1456,7 @@ function WeaponMovesetController(_param1, _param2)
 				
 				-- 2h Backstep
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothBackstep) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							if (not this:IsNetworkCompatibilityEnabled()) then
@@ -1472,7 +1480,7 @@ function WeaponMovesetController(_param1, _param2)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardCounter or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavyGuardCounter) then
 					comboResetCheck = false;
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						if (not this:IsNetworkCompatibilityEnabled()) then
 							action.B1 = "W_AttackBothHeavy1aStart";
 							action.B2 = "W_AttackBothHeavy1bStart";
@@ -1487,14 +1495,14 @@ function WeaponMovesetController(_param1, _param2)
 				
 				-- 2h Heavy
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1Start or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1End) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.LowStance) then
 							action.B1 = "W_AttackBothLight6";
 						end
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2Start or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2End) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothLight3";
@@ -1510,7 +1518,7 @@ function WeaponMovesetController(_param1, _param2)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1aStart or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1aSubStart) then
 					setSpecialInterpolation = true;
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothLight3";
@@ -1526,7 +1534,7 @@ function WeaponMovesetController(_param1, _param2)
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1aEnd) then
 					setSpecialInterpolation = true;
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							-- Since this uncharged attack is basically the same as R1(2), allow it to enable the evasion chain
@@ -1550,7 +1558,7 @@ function WeaponMovesetController(_param1, _param2)
 						action.B2 = "W_AttackBothHeavy1cStart";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2aStart or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2aEnd) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothLight2";
@@ -1563,7 +1571,7 @@ function WeaponMovesetController(_param1, _param2)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1bStart) then
 					setSpecialInterpolation = true;
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothHeavy1cStart";
 						action.B2 = "W_AttackBothHeavy1aStart";
 					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
@@ -1571,7 +1579,7 @@ function WeaponMovesetController(_param1, _param2)
 						action.B2 = "W_AttackBothHeavy1aStart";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1bEnd) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothHeavy1aStart";
@@ -1586,7 +1594,7 @@ function WeaponMovesetController(_param1, _param2)
 						action.B1 = "W_AttackBothHeavy1aStart";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bStart or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2bEnd) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothHeavy1aStart";
 						
 						if (movesetOverride == WeaponMovesetOverride.LeontielGreatsword) then
@@ -1601,7 +1609,7 @@ function WeaponMovesetController(_param1, _param2)
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1cStart or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1cSubStart) then
 					setSpecialInterpolation = true;
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothHeavy1aStart";
@@ -1614,13 +1622,13 @@ function WeaponMovesetController(_param1, _param2)
 						action.B2 = "W_AttackBothHeavy1Start";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy1cEnd) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						action.B1 = "W_AttackBothHeavy1aStart";
 					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						action.B1 = "W_AttackBothLight5";
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2cStart or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2cEnd) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothLight3";
@@ -1634,7 +1642,7 @@ function WeaponMovesetController(_param1, _param2)
 				
 				-- 2h Guard Special
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothGuardSpecial1) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							action.B1 = "W_AttackBothHeavy1bStart";
@@ -1732,7 +1740,7 @@ function WeaponMovesetController(_param1, _param2)
 						elseif (actionKind == WeaponMovesetActionKind.EventAction) then
 							action.Request = ATTACK_REQUEST_BOTH_HEAVY;
 							
-							if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+							if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 								action.B2 = "W_AttackBothHeavy2cStart";
 							elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 								action.B2 = "W_AttackBothHeavy1cStart";
@@ -1763,7 +1771,7 @@ function WeaponMovesetController(_param1, _param2)
 				local weaponCategory = this.WeaponCategory;
 				local movesetOverride = this.MovesetOverride;
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLightJump) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
@@ -1785,7 +1793,7 @@ function WeaponMovesetController(_param1, _param2)
 						g_ComboReset = FALSE;
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackHeavyJump or onUpdateKind == WeaponMovesetOnUpdateKind.AttackDualJump) then
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
 							if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
@@ -1801,10 +1809,7 @@ function WeaponMovesetController(_param1, _param2)
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
 							action.B1 = "W_AttackBothLight5";
-							
-							if (this:SwitchWeaponStanceIfAllowed(ATTACK_REQUEST_BOTH_HEAVY, WeaponMovesetStance.Default)) then
-								action.B2 = "W_AttackBothHeavy1bStart";
-							end
+							action.B2 = "W_AttackBothHeavy2Start";
 						end
 						
 						g_ComboReset = FALSE;
@@ -1861,7 +1866,7 @@ function WeaponMovesetController(_param1, _param2)
 					
 					local weaponCategory = this.WeaponCategory;
 					local movesetOverride = this.MovesetOverride;
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						if (action.R1) then
 							local eventName = MakeEvent("W_AttackRightLight", nextIndex);
 							if (eventName) then
@@ -2491,7 +2496,7 @@ function WeaponMovesetController(_param1, _param2)
 				local weaponCategory = this.WeaponCategory;
 				local movesetOverride = this.MovesetOverride;
 				
-				return this:IsKGSCompatible(weaponCategory, movesetOverride);
+				return this:IsStanceCompatible(weaponCategory, movesetOverride);
 			end,
 			
 			-- Returns the active weapon stance index.
@@ -2674,8 +2679,8 @@ function WeaponMovesetController(_param1, _param2)
 				local weaponCategory = this.WeaponCategory;
 				local movesetOverride = this.MovesetOverride;
 				
-				if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
-					return this:GetActiveWeaponStance() == 0;
+				if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
+					return this:GetActiveWeaponStance() == WeaponMovesetStance.Default;
 				end
 				return false;
 			end,
@@ -2765,7 +2770,7 @@ function WeaponMovesetController(_param1, _param2)
 					local weaponCategory = this.WeaponCategory;
 					local movesetOverride = this.MovesetOverride;
 					
-					if (this:IsKGSCompatible(weaponCategory, movesetOverride) or movesetOverride == WeaponMovesetOverride.KnightLongsword) then
+					if (this:IsStanceCompatible(weaponCategory, movesetOverride) or movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						if (this:IsNetworkCompatibilityEnabled()) then
 							if (actionContext == WeaponMovesetActionContext.Global) then
 								return this:IsMagicTranslationActive() and actionKind == WeaponMovesetActionKind.TransformWeaponL1;
@@ -2856,21 +2861,22 @@ function WeaponMovesetController(_param1, _param2)
 			--
 			-- Parameters:
 				-- int hand: hand the weapon is held in
-			-- Returns: int, 0 if no attacks available, -1 if the result is invalid and should be ignored
+			-- Returns: int, 0 if no attacks available, nil if the result is invalid and should be ignored
 			GetLightAttackCount = function(this, hand)
 				local weaponCategory = this.WeaponCategory;
 				local movesetOverride = this.MovesetOverride;
 				
-				if (this:IsKGSCompatible(weaponCategory, movesetOverride)) then
+				if (weaponCategory == WeaponMovesetCategory.GreatswordEx) then
 					local activeStance = this:GetActiveWeaponStance();
 					if (activeStance == WeaponMovesetStance.LowStance) then
 						return 4;
+					elseif (activeStance == WeaponMovesetStance.HighStance) then
+						return 0;
 					else
 						return 3;
 					end
-				else
-					return GetAttackMaxNumber(hand);
 				end
+				return nil;
 			end,
 			
 			-- A shortcut to create WeaponMoveset_SpecialAction only if we have a valid weapon equipped.
@@ -6007,6 +6013,13 @@ function GetAttackMaxNumber(hand)
         == WEAPON_CATEGORY_THROW_DAGGER or kind == WEAPON_CATEGORY_BACKHAND_SWORD then
         max_num = 6
     end
+	
+	if (max_num == 1) then
+		local count = WeaponMovesetController(kind, sp_kind):GetLightAttackCount(hand);
+		if (count) then
+			max_num = count;
+		end
+	end
 
     return max_num
 end
