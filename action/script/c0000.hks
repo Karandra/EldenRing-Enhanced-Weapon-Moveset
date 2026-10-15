@@ -1419,7 +1419,7 @@ function WeaponMovesetController(_param1, _param2)
 								action.B2 = "W_AttackBothHeavy1bStart";
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
-							action.B1 = "W_AttackBothLight6";
+							action.B1 = "W_AttackBothLight5";
 							action.B2 = "W_AttackBothHeavy2Start";
 						end
 					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
@@ -1509,7 +1509,7 @@ function WeaponMovesetController(_param1, _param2)
 					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.LowStance) then
-							action.B1 = "W_AttackBothLight6";
+							action.B1 = "W_AttackBothLight5";
 						end
 					end
 				elseif (onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2Start or onUpdateKind == WeaponMovesetOnUpdateKind.AttackBothHeavy2End) then
