@@ -870,11 +870,25 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_433282.hkx</path>
     </file>
 	
-	<!-- [2h R2(1b) (Release)] Clever's Silverfang 2h R2(2) (Release) -->
+	<!-- [2h R2(1b) (Release)] Clever's Silverfang 2h R2(2) (Release) to Low Stance -->
 	<file>
       <flags>Flag1</flags>
       <id>1075436305</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_436305.hkx</path>
+    </file>
+	
+	<!-- [2h R2(2b) (Charged)] Heavy Thrusting Sword 2h R2(1) (Charged) to Low Stance -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075436310</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_436310.hkx</path>
+    </file>
+	
+	<!-- [2h R2(2b) (Release)] Godskin Stitcher 2h R2(1) (Release) to Low Stance -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075436315</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_436315.hkx</path>
     </file>
 	
 	<!-- [2h Wall Repel] Clever's Low Stance Idle] -->
