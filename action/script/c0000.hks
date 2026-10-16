@@ -666,9 +666,10 @@ function WeaponMovesetController(_param1, _param2)
 			end,
 			
 			-- Functions that handle the attack chain persisting through a dodge
-			AttackChain_OnAttack = function(this, index)
+			AttackChain_OnAttack = function(this, index, overrideNext)
 				this.ChainAttackAllowed = true;
 				this.ChainAttackIndex = index;
+				this.ChainAttackNextOverride = overrideNext;
 				
 				this.EvasionCount = 0;
 				this.ChainAttackTimer = GetDeltaTime();
@@ -682,23 +683,29 @@ function WeaponMovesetController(_param1, _param2)
 				end
 				
 				if (this.ChainAttackAllowed) then
-					local function AdvanceChain(index, hand)
-						if (index and index ~= 0) then
-							local count = ref:GetLightAttackCount(hand);
-							
-							local nextIndex = index + 1;
-							if (nextIndex <= count) then
-								return nextIndex;
-							elseif (ref:IsLightAttackLoopEnabled()) then
-								return index - 1;
-							else
-								return 1;
+					local nextIndex = nil;
+					if (this.ChainAttackNextOverride) then
+						nextIndex = this.ChainAttackNextOverride;
+						this.ChainAttackNextOverride = nil;
+					else
+						local function AdvanceChain(index, hand)
+							if (index and index ~= 0) then
+								local count = ref:GetLightAttackCount(hand);
+								
+								local nextIndex = index + 1;
+								if (nextIndex <= count) then
+									return nextIndex;
+								elseif (ref:IsLightAttackLoopEnabled()) then
+									return index - 1;
+								else
+									return 1;
+								end
 							end
+							return 0;
 						end
-						return 0;
+						
+						nextIndex = AdvanceChain(this.ChainAttackIndex, GetActiveAttackHand());
 					end
-					
-					local nextIndex = AdvanceChain(this.ChainAttackIndex, GetActiveAttackHand());
 					this.ChainAttackIndex = nextIndex;
 					
 					return nextIndex;
@@ -708,6 +715,7 @@ function WeaponMovesetController(_param1, _param2)
 			AttackChain_Reset = function(this)
 				g_WeaponMovesetController.EvasionCount = 0;
 				g_WeaponMovesetController.ChainAttackIndex = 0;
+				g_WeaponMovesetController.ChainAttackNextOverride = nil;
 				g_WeaponMovesetController.ChainAttackAllowed = false;
 			end,
 			
@@ -1308,9 +1316,9 @@ function WeaponMovesetController(_param1, _param2)
 								action.B2 = "W_AttackBothHeavy2cStart";
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
-							-- For low stance mark this attack as the second attack in the chain,
+							-- For low stance, make this attack chain into one of the alternative R1s,
 							-- because chaining to the actual R1(2) afted evasion looks odd.
-							g_WeaponMovesetController:AttackChain_OnAttack(2);
+							g_WeaponMovesetController:AttackChain_OnAttack(1, 5);
 							
 							if (this:ShouldUseAlternativeAttackTransition(0)) then
 								action.B1 = "W_AttackBothLight3";
@@ -1786,6 +1794,8 @@ function WeaponMovesetController(_param1, _param2)
 					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
+							g_WeaponMovesetController:AttackChain_OnAttack(1);
+							
 							if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
 								action.R2 = "W_AttackRightHeavy2Start";
 							end
@@ -1798,8 +1808,15 @@ function WeaponMovesetController(_param1, _param2)
 								action.B2 = "W_AttackBothHeavy2cStart";
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
+							g_WeaponMovesetController:AttackChain_OnAttack(1, 5);
+							
 							if (landing) then
 								action.B1 = "W_AttackBothLight4";
+								if (this:ShouldUseAlternativeAttackTransition(0)) then
+									action.B1 = "W_AttackBothLight3";
+								elseif (this:ShouldUseAlternativeAttackTransition(1)) then
+									action.B1 = "W_AttackBothLight1";
+								end
 							else
 								action.B1 = "W_AttackBothLight5";
 							end
@@ -1812,6 +1829,8 @@ function WeaponMovesetController(_param1, _param2)
 					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
 						if (activeStance == WeaponMovesetStance.Default) then
+							g_WeaponMovesetController:AttackChain_OnAttack(1);
+							
 							if (movesetOverride ~= WeaponMovesetOverride.LeontielGreatsword) then
 								action.R2 = "W_AttackRightHeavy2Start";
 							end
@@ -1824,6 +1843,8 @@ function WeaponMovesetController(_param1, _param2)
 								action.B2 = "W_AttackBothHeavy1bStart";
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
+							g_WeaponMovesetController:AttackChain_OnAttack(1, 5);
+							
 							action.B1 = "W_AttackBothLight5";
 							action.B2 = "W_AttackBothHeavy2Start";
 						end
