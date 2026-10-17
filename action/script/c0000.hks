@@ -1788,8 +1788,10 @@ function WeaponMovesetController(_param1, _param2)
 					return action;
 				end
 				
+				local style = c_Style;
 				local weaponCategory = this.WeaponCategory;
 				local movesetOverride = this.MovesetOverride;
+				
 				if (onUpdateKind == WeaponMovesetOnUpdateKind.AttackLightJump) then
 					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
 						local activeStance = this:GetActiveWeaponStance();
@@ -1808,7 +1810,11 @@ function WeaponMovesetController(_param1, _param2)
 								action.B2 = "W_AttackBothHeavy2cStart";
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
-							g_WeaponMovesetController:AttackChain_OnAttack(1, 5);
+							if (style == HAND_RIGHT_BOTH or style == HAND_LEFT_BOTH) then
+								g_WeaponMovesetController:AttackChain_OnAttack(1, 5);
+							else
+								g_WeaponMovesetController:AttackChain_OnAttack(1);
+							end
 							
 							if (landing) then
 								action.B1 = "W_AttackBothLight4";
@@ -1843,7 +1849,11 @@ function WeaponMovesetController(_param1, _param2)
 								action.B2 = "W_AttackBothHeavy1bStart";
 							end
 						elseif (activeStance == WeaponMovesetStance.LowStance) then
-							g_WeaponMovesetController:AttackChain_OnAttack(1, 5);
+							if (style == HAND_RIGHT_BOTH or style == HAND_LEFT_BOTH) then
+								g_WeaponMovesetController:AttackChain_OnAttack(1, 5);
+							else
+								g_WeaponMovesetController:AttackChain_OnAttack(1);
+							end
 							
 							action.B1 = "W_AttackBothLight5";
 							action.B2 = "W_AttackBothHeavy2Start";
@@ -2717,7 +2727,7 @@ function WeaponMovesetController(_param1, _param2)
 				local movesetOverride = this.MovesetOverride;
 				
 				if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
-					return this:GetActiveWeaponStance() == WeaponMovesetStance.Default;
+					return c_Style == HAND_RIGHT or this:GetActiveWeaponStance() == WeaponMovesetStance.Default;
 				end
 				return false;
 			end,
