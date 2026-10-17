@@ -58,6 +58,13 @@ def run(
     animation_id_low = 400000 + animation_id
     animation_low = ctx.animation(f"a{animation_category:03d}_{animation_id_low:06d}")
     stance_low = ctx.make_copy(child.get_target(), animId=animation_id_low, name=f"WeaponStanceCMSG<{child_name}, LowStance>", generators=[ctx.new_clip(animation_low, mode=playback_mode)])
+    
+    bindset_ptr = stance_low["variableBindingSet"];
+    if bindset_ptr.get_value():
+        print(f"Reference CMSG '{child.get_target()}' uses hkbVariableBindingSet, making a copy of it")
+        
+        bindset_copy = ctx.make_copy(bindset_ptr.get_target())
+        stance_low["variableBindingSet"].set_value(bindset_copy)
 
     stanceSelector = ctx.new_manual_selector("WeaponStanceIndex", name=selector_name, generators=[child.get_target(), stance_low], selectedIndexCanChangeAfterActivate=selected_index_can_change_after_activate)
     parent["generators"][child_index].set_value(stanceSelector)
