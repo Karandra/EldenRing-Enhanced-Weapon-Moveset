@@ -46,6 +46,20 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019000.hkx</path>
     </file>
 	
+	<!-- [Guard (StartMove, Additive)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019001</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019001.hkx</path>
+    </file>
+	
+	<!-- [Guard (EndMove, Additive)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019002</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019002.hkx</path>
+    </file>
+	
 	<!-- [EndIdle] DS3: Greatswords - Stance WA -->
     <file>
       <flags>Flag1</flags>
@@ -53,11 +67,63 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019100.hkx</path>
     </file>
 	
-	<!-- [Move] DS3: Greatswords - Stance WA -->
-    <file>
+	<!-- [Guard Damage (Light)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019200.hkx</path>
+    </file>
+	
+	<!-- [Guard Damage (Medium)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019210</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019210.hkx</path>
+    </file>
+	
+	<!-- [Guard Damage (Heavy)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019220</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019220.hkx</path>
+    </file>
+	
+	<!-- [Guard Damage (Heavy, Alt)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019230</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019230.hkx</path>
+    </file>
+	
+	<!-- [Guard Break] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019500</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019500.hkx</path>
+    </file>
+	
+	<!-- [Guard Idle (Move)] SDT: Wolf -->
+	<file>
       <flags>Flag1</flags>
       <id>1017023000</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_023000.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1017023100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_023100.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1017023200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_023200.hkx</path>
+    </file>
+	
+	<!-- [Move] DS3: Greatswords - Stance WA -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1017023010</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_023010.hkx</path>
     </file>
 	
 	<!-- [Idle (with finger motion)] Clever's: Low Stance Idle -->
@@ -676,84 +742,11 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419000.hkx</path>
     </file>
 	
-	<!-- [Guard (StartMove, Additive)] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017419001</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419001.hkx</path>
-    </file>
-	
-	<!-- [Guard (EndMove, Additive)] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017419002</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419002.hkx</path>
-    </file>
-	
 	<!-- [Guard (EndIdle)] SDT: Wolf -->
 	<file>
       <flags>Flag1</flags>
       <id>1017419100</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419100.hkx</path>
-    </file>
-	
-	<!-- [Guard Damage (Light)] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017419200</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419200.hkx</path>
-    </file>
-	
-	<!-- [Guard Damage (Medium)] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017419210</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419210.hkx</path>
-    </file>
-	
-	<!-- [Guard Damage (Heavy)] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017419220</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419220.hkx</path>
-    </file>
-	
-	<!-- [Guard Damage (Heavy, Alt 1)] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017419230</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419230.hkx</path>
-    </file>
-	
-	<!-- [Guard Damage (Heavy, Alt 2)] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017419240</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419240.hkx</path>
-    </file>
-	
-	<!-- [Guard Break] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017419500</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419500.hkx</path>
-    </file>
-	
-	<!-- [Guard Idle (Move)] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017423000</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423000.hkx</path>
-    </file>
-	<file>
-      <flags>Flag1</flags>
-      <id>1017423100</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423100.hkx</path>
-    </file>
-	<file>
-      <flags>Flag1</flags>
-      <id>1017423200</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423200.hkx</path>
     </file>
 	
 	<!-- ### Repository: Moveset - Greatsword [Default Stance] ### -->
