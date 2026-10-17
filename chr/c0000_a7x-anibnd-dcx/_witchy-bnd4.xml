@@ -662,6 +662,76 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_529090.hkx</path>
     </file>
 	
+	<!-- [Guard (Idle)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017400100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_400100.hkx</path>
+    </file>
+	
+	<!-- [Guard (StartIdle)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419000.hkx</path>
+    </file>
+	
+	<!-- [Guard (EndIdle)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419100.hkx</path>
+    </file>
+	
+	<!-- [Guard Damage (Light)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419200.hkx</path>
+    </file>
+	
+	<!-- [Guard Damage (Medium)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419210</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419210.hkx</path>
+    </file>
+	
+	<!-- [Guard Damage (Heavy)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419220</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419220.hkx</path>
+    </file>
+	
+	<!-- [Guard Damage (Heavy, Alt 1)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419230</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419230.hkx</path>
+    </file>
+	
+	<!-- [Guard Damage (Heavy, Alt 2)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419240</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419240.hkx</path>
+    </file>
+	
+	<!-- [Guard Break] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419500</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419500.hkx</path>
+    </file>
+	
+	<!-- [Guard Idle (Walk)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017423000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423000.hkx</path>
+    </file>
+	
 	<!-- ### Repository: Moveset - Greatsword [Default Stance] ### -->
 	
 	<!-- [2h R2(1a) (Charged)] DS3: Greatswords - Stance WA (Light) -->
