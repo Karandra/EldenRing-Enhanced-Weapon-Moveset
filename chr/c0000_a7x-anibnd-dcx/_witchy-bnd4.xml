@@ -676,6 +676,20 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419000.hkx</path>
     </file>
 	
+	<!-- [Guard (StartMove, Additive)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419001</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419001.hkx</path>
+    </file>
+	
+	<!-- [Guard (EndMove, Additive)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419002</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419002.hkx</path>
+    </file>
+	
 	<!-- [Guard (EndIdle)] SDT: Wolf -->
 	<file>
       <flags>Flag1</flags>
@@ -725,11 +739,21 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419500.hkx</path>
     </file>
 	
-	<!-- [Guard Idle (Walk)] SDT: Wolf -->
+	<!-- [Guard Idle (Move)] SDT: Wolf -->
 	<file>
       <flags>Flag1</flags>
       <id>1017423000</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423000.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1017423100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423100.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1017423200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423200.hkx</path>
     </file>
 	
 	<!-- ### Repository: Moveset - Greatsword [Default Stance] ### -->
