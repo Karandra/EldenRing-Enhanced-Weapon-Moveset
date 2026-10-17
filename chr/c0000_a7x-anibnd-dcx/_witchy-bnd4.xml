@@ -102,6 +102,23 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019500.hkx</path>
     </file>
 	
+	<!-- [Guard Break] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019600</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019600.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019601</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019601.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1017019602</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019602.hkx</path>
+    </file>
+	
 	<!-- [Guard Idle (Move)] SDT: Wolf -->
 	<file>
       <flags>Flag1</flags>
