@@ -2632,7 +2632,7 @@ function WeaponMovesetController(_param1, _param2)
 				return true;
 			end,
 			
-			-- Switches the weapon to the requested stance if possible at the fiven moment.
+			-- Switches the weapon to the requested stance if possible at the given moment.
 			-- Controlled with an SpEffect set from TAE for unconditional switch and with attack request monitoring for conditional ones.
 			-- Parameters:
 				-- any attackRequest: one of or a table of ATTACK_REQUEST_* values. The switch will only be allowed if the current request matches this.
@@ -2642,20 +2642,31 @@ function WeaponMovesetController(_param1, _param2)
 				-- bool execSwitchEvent: if true, executes the stance switch animation
 			-- Returns: bool, true if sucessful
 			SwitchWeaponStanceIfAllowed = function(this, attackRequest, targetStance, execSwitchEvent)
+				local function DoSwitch()
+					if (this:SwitchWeaponStance(targetStance, execSwitchEvent)) then
+						if (not execSwitchEvent) then
+							-- 103350: Weapon Stance: Stance Switched
+							act(AddSpEffect, 103350);
+						end
+						return true;
+					end
+					return false;
+				end
+			
 				if (type(attackRequest) == "number") then
 					-- 103300: Weapon Stance: Switch Possible
 					if (attackRequest == ATTACK_REQUEST_INVALID) then
-						return env(GetSpEffectID, 103300) == TRUE and this:SwitchWeaponStance(targetStance, execSwitchEvent);
+						return env(GetSpEffectID, 103300) == TRUE and DoSwitch();
 					elseif (attackRequest == GetAttackRequest(FALSE)) then
-						return this:SwitchWeaponStance(targetStance, execSwitchEvent);
+						return DoSwitch();
 					end
 				elseif (type(attackRequest) == "table") then
 					local currentRequest = GetAttackRequest(FALSE);
 					if (this:AnyOf(attackRequest, currentRequest)) then
-						return this:SwitchWeaponStance(targetStance, execSwitchEvent);
+						return DoSwitch();
 					end
 				elseif (not attackRequest and GetAttackRequest(FALSE) ~= ATTACK_REQUEST_INVALID) then
-					return this:SwitchWeaponStance(targetStance, execSwitchEvent);
+					return DoSwitch();
 				end
 				return false;
 			end,
