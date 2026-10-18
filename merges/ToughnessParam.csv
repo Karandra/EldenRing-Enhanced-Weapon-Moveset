@@ -1,0 +1,9 @@
+ID,Name,correctionRate,minToughness,isNonEffectiveCorrectionForMin,pad2,spEffectId,proCorrectionRate,unk1,unk2,pad1
+40,[Low Stance] 2h R1,0.65,80,0,0,6352,1,1,0.925,[0|0|0|0|0|0|0|0]
+41,[Low Stance] 2h R2 (Release),0.65,80,0,0,6352,1,1,0.925,[0|0|0|0|0|0|0|0]
+42,[Low Stance] 2h R2 (Charged),1.3,80,0,0,6352,1,1,0.925,[0|0|0|0|0|0|0|0]
+43,[Low Stance] 2h RR1/CR1/BR1,0.4875,80,0,0,6352,1,1,0.925,[0|0|0|0|0|0|0|0]
+44,[Low Stance] 2h RR2,0.65,80,0,0,6352,1,1,0.925,[0|0|0|0|0|0|0|0]
+45,[Low Stance] 2h JR1,0.4875,80,0,0,6352,1,1,0.925,[0|0|0|0|0|0|0|0]
+46,[Low Stance] 2h JR2,0.65,80,0,0,6352,1,1,0.925,[0|0|0|0|0|0|0|0]
+47,[Low Stance] 2h Guard Counter,0.325,80,0,0,6352,1,1,0.925,[0|0|0|0|0|0|0|0]
