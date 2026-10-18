@@ -63,6 +63,7 @@
 ------------------------------------------
 -- Enhanced Weapon Moveset
 ------------------------------------------
+local g_WeaponMovesetController = nil;
 
 -- Enums
 local WeaponMovesetCategory =
@@ -100,6 +101,12 @@ local WeaponMovesetJumpKind =
 	Neutral = 0,
 	Forward = 1,
 	Dash = 2
+}
+local WeaponMovesetDamageKind =
+{
+	GuardLight = 1,
+	GuardMedium = 2,
+	GuardLarge = 3
 }
 
 local WeaponMovesetActionKind =
@@ -246,11 +253,9 @@ local WeaponMovesetOnUpdateKind =
 	HeavyChargeEnd = -1002,
 };
 
--- Common functions
-
--- Override the defalt act and env functions. The act is unchanged so far, but env is changed to translate
--- extra weapon kinds back to its original type. This is done to avoid changing every place where weapon
--- category is accessed.
+-- Override the defalt act and env functions.
+-- Env is changed to translate extra weapon kinds back to its original type. This is done to avoid changing every place where weapon category is accessed.
+-- Act is changed to redirect debug log using act(DebugLogOutput, ...) into our own logger.
 local GetEnvVariable = env;
 local InvokeEnvCommand = act;
 local function env(command, ...)
@@ -265,7 +270,17 @@ local function env(command, ...)
 		return GetEnvVariable(command, ...);
 	end
 end
+local function act(command, ...)
+	--[[
+	if (command == DebugLogOutput and g_WeaponMovesetController) then
+		g_WeaponMovesetController:DebugOutput("[DebugLogOutput] %s", tostring(select(1, ...)));
+	end
+	--]]
+	
+	return InvokeEnvCommand(command, ...);
+end
 
+-- Common functions
 function GetActiveAttackHand()
     local style = c_Style
     if (style == HAND_LEFT_BOTH) then
@@ -307,7 +322,6 @@ function IsHKSDataExposerAvailable()
 end
 
 -- WeaponMovesetController class
-local g_WeaponMovesetController = nil;
 
 -- Parameters (1):
 	-- int hand: the hand to initialize the weapon for, if nil the active hand is used
@@ -1707,10 +1721,11 @@ function WeaponMovesetController(_param1, _param2)
 			--
 			-- Parameters:
 				-- struct Action&
-				-- const class SpecialAction& 
+				-- const class SpecialAction&
+				-- WeaponMovesetDamageKind damageKind: the damage kind, or nil if this isn't guard damage event
 			-- Returns: struct Action
-			TranslateActionOnGuard = function(this, action, specialAction)
-				--this:DebugOutput("[TranslateActionOnGuard] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext);
+			TranslateActionOnGuard = function(this, action, specialAction, damageKind)
+				this:DebugOutput("[TranslateActionOnGuard] .ActionKind: %s, .ActionMod = %s, .ActionContext = %s, DamageKind = %s", specialAction.ActionKind, specialAction.ActionMod, specialAction.ActionContext, tostring(damageKind));
 				if (not this:IsAvailable()) then
 					return action;
 				end
@@ -1718,6 +1733,9 @@ function WeaponMovesetController(_param1, _param2)
 				-- Take the action context from special action first
 				if (specialAction) then
 					action.ActionContext = specialAction.ActionContext;
+				end
+				if (not action.ActionContext) then
+					action.ActionContext = WeaponMovesetActionContext.OnGuard;
 				end
 				
 				-- Guard moveset A and B invocation
@@ -1738,6 +1756,16 @@ function WeaponMovesetController(_param1, _param2)
 							action.B1 = "W_AttackBothLight1";
 							action.B2 = "W_AttackBothHeavy1Start";
 						end
+					end
+					
+					-- See ExecAddDamage
+					local attackDirection = env(GetAtkDirection);
+					local damageDirection = env(GetReceivedDamageDirection);
+					
+					if (damageKind == WeaponMovesetDamageKind.GuardLight or damageKind == WeaponMovesetDamageKind.GuardMedium) then
+						action.B1 = "W_AttackBothHeavy2cStart";
+					elseif (damageKind == WeaponMovesetDamageKind.GuardLarge) then
+						action.B1 = "W_AttackBothHeavy2bStart";
 					end
 				elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 					if (this:IsNetworkCompatibilityEnabled()) then
@@ -1772,10 +1800,6 @@ function WeaponMovesetController(_param1, _param2)
 							end
 						end
 					end
-				end
-				
-				if (not action.ActionContext) then
-					action.ActionContext = WeaponMovesetActionContext.OnGuard;
 				end
 				return action;
 			end,
@@ -2660,8 +2684,8 @@ function WeaponMovesetController(_param1, _param2)
 				end
 			
 				if (type(attackRequest) == "number") then
-					-- 103300: Weapon Stance: Switch Possible
 					if (attackRequest == ATTACK_REQUEST_INVALID) then
+						-- 103300: Weapon Stance: Switch Possible
 						return env(GetSpEffectID, 103300) == TRUE and DoSwitch();
 					elseif (attackRequest == GetAttackRequest(FALSE)) then
 						return DoSwitch();
@@ -10222,7 +10246,7 @@ function EvasionCommonFunction(fall_type, r1, r2, l1, l2, b1, b2, quick_type)
     return FALSE
 end
 
-function DamageCommonFunction(guardcondition, estep, fall_type)
+function DamageCommonFunction(guardcondition, estep, fall_type, damageKind)
     if ExecPassiveAction(FALSE, fall_type, FALSE) == TRUE then
         return TRUE
     end
@@ -10285,7 +10309,7 @@ function DamageCommonFunction(guardcondition, estep, fall_type)
 			L2 = "W_AttackLeftHeavy1",
 			B1 = "W_AttackBothLight1",
 			B1 = "W_AttackBothHeavy1Start"
-		}, specialAction);
+		}, specialAction, damageKind);
 		
 		if (weaponMovesetController:ExecAttack(action, ALLBODY, FALSE, FALSE, FALSE)) then
 			ResetDamageCount();
@@ -12234,7 +12258,7 @@ end
 function GuardDamageSmall_onUpdate()
     act(SetStaminaRecoveryDisabled)
 
-    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT) == TRUE then
+    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT, WeaponMovesetDamageKind.GuardLight) == TRUE then
         return
     end
 
@@ -12250,7 +12274,7 @@ end
 function GuardDamageMiddle_onUpdate()
     act(SetStaminaRecoveryDisabled)
 
-    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT) == TRUE then
+    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT, WeaponMovesetDamageKind.GuardMedium) == TRUE then
         return
     end
 
@@ -12266,7 +12290,7 @@ end
 function GuardDamageLarge_onUpdate()
     act(SetStaminaRecoveryDisabled)
 
-    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT) == TRUE then
+    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT, WeaponMovesetDamageKind.GuardLarge) == TRUE then
         return
     end
     if env(GetSpEffectID, 102000) == TRUE then
@@ -12329,7 +12353,7 @@ end
 
 function GuardDamageSmall_JustGuard_onUpdate()
     act(SetStaminaRecoveryDisabled)
-    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT) == TRUE then
+    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT, WeaponMovesetDamageKind.GuardLight) == TRUE then
         return
     end
     SetJustGuardReinputState()
@@ -12341,7 +12365,7 @@ end
 
 function GuardDamageMiddle_JustGuard_onUpdate()
     act(SetStaminaRecoveryDisabled)
-    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT) == TRUE then
+    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT, WeaponMovesetDamageKind.GuardMedium) == TRUE then
         return
     end
     SetJustGuardReinputState()
@@ -12353,7 +12377,7 @@ end
 
 function GuardDamageLarge_JustGuard_onUpdate()
     act(SetStaminaRecoveryDisabled)
-    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT) == TRUE then
+    if DamageCommonFunction(TO_GUARDON, ESTEP_NONE, FALL_TYPE_DEFAULT, WeaponMovesetDamageKind.GuardLarge) == TRUE then
         return
     end
     SetJustGuardReinputState()
@@ -12392,7 +12416,7 @@ function Repelled_Large_onUpdate()
 end
 
 function GuardDamageExLarge_onUpdate()
-    if DamageCommonFunction(FALSE, ESTEP_DOWN, FALL_TYPE_DEFAULT) == TRUE then
+    if DamageCommonFunction(FALSE, ESTEP_DOWN, FALL_TYPE_DEFAULT, WeaponMovesetDamageKind.GuardLarge) == TRUE then
         return
     end
 end
