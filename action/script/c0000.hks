@@ -1500,8 +1500,14 @@ function WeaponMovesetController(_param1, _param2)
 					comboResetCheck = false;
 					
 					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
-						if (not this:IsNetworkCompatibilityEnabled()) then
-							action.B1 = "W_AttackBothHeavy1aStart";
+						local activeStance = this:GetActiveWeaponStance();
+						if (activeStance == WeaponMovesetStance.Default) then
+							if (not this:IsNetworkCompatibilityEnabled()) then
+								action.B1 = "W_AttackBothHeavy1aStart";
+								action.B2 = "W_AttackBothHeavy1bStart";
+							end
+						elseif (activeStance == WeaponMovesetStance.LowStance) then
+							action.B1 = "W_AttackBothLight5";
 							action.B2 = "W_AttackBothHeavy1bStart";
 						end
 					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then

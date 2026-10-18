@@ -937,6 +937,13 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432400.hkx</path>
     </file>
 	
+	<!-- [2h Guard Counter] Dagger Guard Counter to Low Stance -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1075432700</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_432700.hkx</path>
+    </file>
+	
 	<!-- [2h JR1] Modified Light Greatsword JR2 to Low Stance -->
 	<file>
       <flags>Flag1</flags>
