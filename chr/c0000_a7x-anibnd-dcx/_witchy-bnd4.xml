@@ -95,14 +95,7 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019230.hkx</path>
     </file>
 	
-	<!-- [Guard Break] SDT: Wolf -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1017019500</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019500.hkx</path>
-    </file>
-	
-	<!-- [Guard Break] SDT: Wolf -->
+	<!-- [Guard Backstep] -->
 	<file>
       <flags>Flag1</flags>
       <id>1017019600</id>
@@ -764,6 +757,13 @@
       <flags>Flag1</flags>
       <id>1017419100</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419100.hkx</path>
+    </file>
+	
+	<!-- [Guard Break] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419500</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419500.hkx</path>
     </file>
 	
 	<!-- ### Repository: Moveset - Greatsword [Default Stance] ### -->
