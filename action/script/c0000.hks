@@ -1885,7 +1885,11 @@ function WeaponMovesetController(_param1, _param2)
 								g_WeaponMovesetController:AttackChain_OnAttack(1);
 							end
 							
-							action.B1 = "W_AttackBothLight5";
+							if (landing) then
+								action.B1 = "W_AttackBothLight3";
+							else
+								action.B1 = "W_AttackBothLight5";
+							end
 							action.B2 = "W_AttackBothHeavy2Start";
 						end
 						
