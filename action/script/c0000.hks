@@ -1784,9 +1784,14 @@ function WeaponMovesetController(_param1, _param2)
 					local actionContext = specialAction.ActionContext;
 					
 					if (actionKind) then
+						-- If alternative attack transition is active, we're too late into the guard dropping
+						-- animation and should not allow to use irregularly-invoked attacks.
+						if (actionContext == WeaponMovesetActionContext.OnGuardEnd and this:ShouldUseAlternativeAttackTransition()) then
+							return action;
+						end
+					
 						-- Special actions require atatck request to be set otherwise ExecAttack
 						-- is going to ignore the call. Supported by ExecAttack2 variant only.
-						
 						if (actionKind == WeaponMovesetActionKind.Jump) then
 							action.Request = ATTACK_REQUEST_BOTH_LIGHT;
 							action.B1 = "W_AttackBothGuardSpecial1";
