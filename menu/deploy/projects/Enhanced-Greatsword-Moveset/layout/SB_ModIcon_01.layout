@@ -1,0 +1,3 @@
+<TextureAtlas imagePath="SB_ModIcon_01.png">
+	<SubTexture name="MENU_ItemIcon_16000.png" x="0" y="0" width="160" height="160" half="0"/>
+</TextureAtlas>
