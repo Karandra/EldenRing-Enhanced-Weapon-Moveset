@@ -13,6 +13,9 @@ chr/_DSAS_WORKSPACE.json
 chr/c0000-anibnd-dcx/*
 chr/c0000-behbnd-dcx/*
 
+# Deployed Menu files
+menu/hi/*
+
 # Other files
 *.lnk
 *.mp4
