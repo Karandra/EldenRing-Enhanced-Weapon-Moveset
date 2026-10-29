@@ -1611,8 +1611,8 @@ function WeaponMovesetController(_param1, _param2)
 					setSpecialInterpolation = true;
 					
 					if (this:IsStanceCompatible(weaponCategory, movesetOverride)) then
-						action.B1 = "W_AttackBothHeavy1cStart";
-						action.B2 = "W_AttackBothHeavy1aStart";
+						action.B1 = "W_AttackBothHeavy1aStart";
+						action.B2 = "W_AttackBothHeavy1cStart";
 					elseif (movesetOverride == WeaponMovesetOverride.KnightLongsword) then
 						action.B1 = "W_AttackBothHeavy1cStart";
 						action.B2 = "W_AttackBothHeavy1aStart";
