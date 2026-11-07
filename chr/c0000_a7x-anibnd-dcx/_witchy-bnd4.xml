@@ -766,6 +766,66 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419500.hkx</path>
     </file>
 	
+	<!-- ### Repository: Motion - Light Greatsword ### -->
+	
+	<!-- [EndIdle] DS3: Greatswords - Stance WA -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1018019100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a018_019100.hkx</path>
+    </file>
+	
+	<!-- ### Repository: Moveset - Light Greatsword [Default Stance] ### -->
+	
+	<!-- [2h R2(1b) (Charged)] DS3: Short Sword - 2h R2(1) (Charged) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1074032500</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a074_032500.hkx</path>
+    </file>
+	
+	<!-- [2h R2(1b) (SubStart)] DS3: Short Sword - 2h R2(1) (SubStart) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1074032501</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a074_032501.hkx</path>
+    </file>
+	
+	<!-- [2h R2(1b) (Release)] DS3: Short Sword - 2h R2(1) (Release) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1074032505</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a074_032505.hkx</path>
+    </file>
+	
+	<!-- [2h R2(2b) (Charged)] DS3: Short Sword - 2h R2(2) (Charged) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1074032510</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a074_032510.hkx</path>
+    </file>
+	
+	<!-- [2h R2(2b) (Release)] DS3: Short Sword - 2h R2(2) (Release) -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1074032515</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a074_032515.hkx</path>
+    </file>
+	
+	<!-- [2h R2(1a) (Charged)] DS3: Straight Sword - Stance WA (Light) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1074036200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a074_036200.hkx</path>
+    </file>
+	
+	<!-- [2h R2(1b) (Charged)] DS3: Straight Sword - Stance WA (Heavy) -->
+    <file>
+      <flags>Flag1</flags>
+      <id>1074036300</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a074_036300.hkx</path>
+    </file>
+	
 	<!-- ### Repository: Moveset - Greatsword [Default Stance] ### -->
 	
 	<!-- [2h R2(1a) (Charged)] DS3: Greatswords - Stance WA (Light) -->
@@ -1089,43 +1149,6 @@
       <flags>Flag1</flags>
       <id>1075433920</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a075_433920.hkx</path>
-    </file>
-	
-	<!-- ### Repository: Moveset - Light Greatsword [Default Stance] ### -->
-	
-	<!-- [2h R2(1b) (Charged)] DS3: Short Sword - 2h R2(1) (Charged) -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1076036300</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a076_036300.hkx</path>
-    </file>
-	
-	<!-- [2h R2(1b) (SubStart)] DS3: Short Sword - 2h R2(1) (SubStart) -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1076036301</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a076_036301.hkx</path>
-    </file>
-	
-	<!-- [2h R2(1b) (Release)] DS3: Short Sword - 2h R2(1) (Release) -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1076036305</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a076_036305.hkx</path>
-    </file>
-	
-	<!-- [2h R2(2b) (Charged)] DS3: Short Sword - 2h R2(2) (Charged) -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1076036310</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a076_036310.hkx</path>
-    </file>
-	
-	<!-- [2h R2(2b) (Release)] DS3: Short Sword - 2h R2(2) (Release) -->
-	<file>
-      <flags>Flag1</flags>
-      <id>1076036315</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a076_036315.hkx</path>
     </file>
   </files>
 </bnd4>
