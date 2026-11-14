@@ -46,14 +46,14 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019000.hkx</path>
     </file>
 	
-	<!-- [Guard (StartMove, Additive)] SDT: Wolf -->
+	<!-- [Guard (StartMove, Additive)] DS3: Greatswords - Stance WA -->
 	<file>
       <flags>Flag1</flags>
       <id>1017019001</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019001.hkx</path>
     </file>
 	
-	<!-- [Guard (EndMove, Additive)] SDT: Wolf -->
+	<!-- [Guard (EndMove, Additive)] DS3: Greatswords - Stance WA -->
 	<file>
       <flags>Flag1</flags>
       <id>1017019002</id>
@@ -112,8 +112,8 @@
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_019602.hkx</path>
     </file>
 	
-	<!-- [Guard Idle (Move)] SDT: Wolf -->
-	<file>
+	<!-- [Guard Idle (Move)] DS3: Greatswords - Stance WA -->
+    <file>
       <flags>Flag1</flags>
       <id>1017023000</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_023000.hkx</path>
@@ -127,13 +127,6 @@
       <flags>Flag1</flags>
       <id>1017023200</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_023200.hkx</path>
-    </file>
-	
-	<!-- [Move] DS3: Greatswords - Stance WA -->
-    <file>
-      <flags>Flag1</flags>
-      <id>1017023010</id>
-      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_023010.hkx</path>
     </file>
 	
 	<!-- [Idle (with finger motion)] Clever's: Low Stance Idle -->
@@ -757,6 +750,37 @@
       <flags>Flag1</flags>
       <id>1017419100</id>
       <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419100.hkx</path>
+    </file>
+	
+	<!-- [Guard (StartMove, Additive)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419001</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419001.hkx</path>
+    </file>
+	
+	<!-- [Guard (EndMove, Additive)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017419002</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_419002.hkx</path>
+    </file>
+	
+	<!-- [Guard Idle (Move)] SDT: Wolf -->
+	<file>
+      <flags>Flag1</flags>
+      <id>1017423000</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423000.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1017423100</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423100.hkx</path>
+    </file>
+	<file>
+      <flags>Flag1</flags>
+      <id>1017423200</id>
+      <path>INTERROOT_win64\chr\c0000\hkx\a7x_compendium\a017_423200.hkx</path>
     </file>
 	
 	<!-- [Guard Break] SDT: Wolf -->
